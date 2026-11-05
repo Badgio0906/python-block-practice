@@ -78,6 +78,7 @@ function showPlaceholder(title, detail) {
 }
 
 function resetCode() {
+  if (running) stopRun('条件が変わったため、前の調査を中止しました。');
   code.value = generatedCode();
   el('code-help').textContent = '設定を変えるとコードが再生成されます。';
   setStatus('実行を待っています');
@@ -260,8 +261,12 @@ function validateCSV(text) {
 
 function loadData(text, name) {
   csvText = validateCSV(text);
+  const count = Math.max(0, csvText.trimEnd().split(/\r?\n/).length - 1);
   el('data-name').textContent = name;
-  el('data-count').textContent = `${Math.max(0, csvText.trimEnd().split(/\r?\n/).length - 1)} 件の注文データ`;
+  el('data-count').textContent = `${count} 件の注文データ`;
+  el('hero-count').textContent = count;
+  el('art-count').textContent = count;
+  el('takeaway-count').textContent = count;
   setRunning(false);
   setStatus('実行を待っています');
   showPlaceholder('何が見つかるかな？', '「Pythonで調べる」を押すと、ここに結果が表示されます。');
@@ -269,7 +274,10 @@ function loadData(text, name) {
 
 missions.forEach((button) => button.addEventListener('click', () => selectMission(button.dataset.mission)));
 [weather, metric, limit].forEach((select) => select.addEventListener('change', () => { markCustom(); resetCode(); }));
-code.addEventListener('input', () => { el('code-help').textContent = 'コードを編集中です。設定を変えると再生成されます。'; });
+code.addEventListener('input', () => {
+  if (running) stopRun('コードが変わったため、前の調査を中止しました。');
+  el('code-help').textContent = 'コードを編集中です。設定を変えると再生成されます。';
+});
 el('reset-code').addEventListener('click', resetCode);
 runButton.addEventListener('click', run);
 stopButton.addEventListener('click', () => stopRun());
