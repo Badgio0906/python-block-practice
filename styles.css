@@ -22,3 +22,4 @@
 .course-switch-links a:focus-visible{outline:3px solid #f4c16f;outline-offset:2px}
 .course-switch-links small{font-size:10px;font-weight:600;opacity:.78}
 @media(max-width:540px){.course-switch{padding-inline:8px}.course-switch-label{font-size:11px}.course-switch-links a{font-size:12px;padding-inline:8px}.course-switch-links small{display:none}}
+.lesson-helpers{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:19px}.lesson-helpers button{border:1px solid #d1ded6;background:#f6faf6;border-radius:8px;padding:7px 11px;color:#356e57;font-size:12px;font-weight:900}.lesson-helpers span{font-size:12px;color:#5c7568}.mission-done{position:absolute;right:15px;bottom:9px;color:#2f8059!important;font-size:10px!important;font-weight:900}

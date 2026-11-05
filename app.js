@@ -1,3 +1,6 @@
+import { PythonRunner } from './shared/runner.js';
+import { loadProgress, markComplete } from './shared/progress.js';
+
 const el = (id) => document.getElementById(id);
 const weather = el('weather');
 const metric = el('metric');
@@ -14,10 +17,27 @@ const missionSettings = {
   sales: { weather: 'all', metric: 'sales', limit: '3' },
 };
 let csvText = '';
-let worker = null;
-let timeout = null;
-let requestId = 0;
+const runner = new PythonRunner();
 let running = false;
+let hintStep = 0;
+const hintText = {
+  popular: ['すべての日を選び、売れた個数を比べよう。', 'Pythonの for は、注文を一件ずつ調べています。'],
+  rain: ['「雨の日だけ」に変えてみよう。', 'if で雨ではない注文を飛ばすと、1位はココアになります。'],
+  sales: ['「売上金額」に変えてみよう。', '価格 × 個数で比べると、ランチセットが1位になります。'],
+};
+
+function renderProgress() {
+  const done = loadProgress().data;
+  missions.forEach((button, index) => {
+    let badge = button.querySelector('.mission-done');
+    if (done.includes(index + 1) && !badge) {
+      badge = document.createElement('span');
+      badge.className = 'mission-done';
+      badge.textContent = '✓ 達成';
+      button.append(badge);
+    }
+  });
+}
 
 function generatedCode() {
   const filter = weather.value;
@@ -80,7 +100,7 @@ function showPlaceholder(title, detail) {
 function resetCode() {
   if (running) stopRun('条件が変わったため、前の調査を中止しました。');
   code.value = generatedCode();
-  el('code-help').textContent = '設定を変えるとコードが再生成されます。';
+  el('code-help').textContent = '設定を変えると、手で編集したコードは消えて再生成されます。';
   setStatus('実行を待っています');
   showPlaceholder('何が見つかるかな？', '「Pythonで調べる」を押すと、ここに結果が表示されます。');
 }
@@ -95,6 +115,8 @@ function selectMission(name) {
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
+  hintStep = 0;
+  el('data-hint-output').textContent = '';
   resetCode();
 }
 
@@ -111,16 +133,8 @@ function setRunning(value) {
   stopButton.hidden = !value;
 }
 
-function discardWorker() {
-  clearTimeout(timeout);
-  timeout = null;
-  if (worker) worker.terminate();
-  worker = null;
-}
-
 function stopRun(reason = '実行を停止しました。もう一度実行できます。') {
-  requestId += 1;
-  discardWorker();
+  runner.cancel();
   setRunning(false);
   setStatus('停止しました', 'error');
   showPlaceholder('調査を中止しました', reason);
@@ -209,43 +223,31 @@ function showExecution(message) {
   let data;
   try { data = JSON.parse(message.value); } catch { /* 自由編集の結果はそのまま表示 */ }
   if (!data || !showRanking(data)) showTextOutput(message.value, message.stdout);
+  else if (el('data-name').textContent === 'sample.csv') {
+    const mission = missions.find((button) => button.classList.contains('active'))?.dataset.mission;
+    const winner = data.ranking?.[0]?.[0];
+    const passed = (mission === 'popular' && data.weather === 'all' && data.metric === 'quantity' && data.matched === 120 && winner === 'カフェラテ')
+      || (mission === 'rain' && data.weather === 'rain' && data.metric === 'quantity' && data.matched === 40 && winner === 'ココア')
+      || (mission === 'sales' && data.weather === 'all' && data.metric === 'sales' && data.matched === 120 && winner === 'ランチセット');
+    if (passed) {
+      markComplete('data', { popular: 1, rain: 2, sales: 3 }[mission]);
+      renderProgress();
+    }
+  }
 }
 
-function run() {
+async function run() {
   if (running || !csvText) return;
   if (code.value.length > 20000) {
     setStatus('コードが長すぎます', 'error');
     showPlaceholder('20,000文字以内にしてください', 'コードを短くしてから、もう一度実行してください。');
     return;
   }
-  discardWorker();
-  worker = new Worker('python-worker.js');
-  const thisRequest = ++requestId;
   setRunning(true);
   setStatus('Pythonを読み込み、調査中…');
   showPlaceholder('調査しています…', '初回はPythonの読み込みに時間がかかることがあります。');
-  worker.onmessage = (event) => {
-    if (thisRequest !== requestId) return;
-    if (event.data.phase === 'ready') {
-      clearTimeout(timeout);
-      setStatus('Pythonで計算中…');
-      timeout = setTimeout(() => {
-        if (thisRequest === requestId) stopRun('8秒以内に終わりませんでした。無限ループなどがないか確認してください。');
-      }, 8000);
-      return;
-    }
-    discardWorker();
-    showExecution(event.data);
-  };
-  worker.onerror = (event) => {
-    if (thisRequest !== requestId) return;
-    discardWorker();
-    showExecution({ ok: false, error: event.message || 'Python実行環境を読み込めませんでした。通信を確認してください。' });
-  };
-  worker.postMessage({ code: code.value, csvText });
-  timeout = setTimeout(() => {
-    if (thisRequest === requestId) stopRun('Pythonの読み込みが間に合いませんでした。通信を確認して再実行してください。');
-  }, 30000);
+  try { showExecution(await runner.run('data', code.value, { csvText })); }
+  catch (error) { if (error.name !== 'AbortError') showExecution({ ok: false, error: error.message }); }
 }
 
 function validateCSV(text) {
@@ -276,9 +278,19 @@ missions.forEach((button) => button.addEventListener('click', () => selectMissio
 [weather, metric, limit].forEach((select) => select.addEventListener('change', () => { markCustom(); resetCode(); }));
 code.addEventListener('input', () => {
   if (running) stopRun('コードが変わったため、前の調査を中止しました。');
-  el('code-help').textContent = 'コードを編集中です。設定を変えると再生成されます。';
+  el('code-help').textContent = 'コードを編集中です。設定を変えると編集内容は消えます。';
 });
 el('reset-code').addEventListener('click', resetCode);
+el('data-hint').addEventListener('click', () => {
+  const mission = missions.find((button) => button.classList.contains('active'))?.dataset.mission || 'popular';
+  const hints = hintText[mission];
+  el('data-hint-output').textContent = hints[Math.min(hintStep++, hints.length - 1)];
+});
+el('data-reset').addEventListener('click', async () => {
+  if (running) stopRun();
+  try { loadData(await (await fetch('sample.csv')).text(), 'sample.csv'); selectMission('popular'); }
+  catch (error) { setStatus('データを読めませんでした', 'error'); showPlaceholder('初期化できませんでした', error.message); }
+});
 runButton.addEventListener('click', run);
 stopButton.addEventListener('click', () => stopRun());
 el('csv-file').addEventListener('change', async (event) => {
@@ -296,6 +308,8 @@ el('csv-file').addEventListener('change', async (event) => {
 });
 
 resetCode();
+renderProgress();
+window.addEventListener('pagehide', () => runner.dispose());
 fetch('sample.csv').then((response) => {
   if (!response.ok) throw new Error('sample.csv を読み込めませんでした。');
   return response.text();
