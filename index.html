@@ -1,75 +1,24 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101b29">
-  <title>売上データ探偵 | Python ブロック練習</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="app.js" defer></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pythonのふしぎを試そう | Python ブロック練習</title>
+  <link rel="stylesheet" href="lessons.css"><script type="module" src="home.js"></script>
 </head>
-<body>
-<nav class="course-switch" aria-label="学習コースの切り替え">
-  <span class="course-switch-label">学習コースを切り替える</span>
-  <span class="course-switch-links"><a href="html/index.html">HTML <small>サイトをつくる</small></a><a class="active" aria-current="page" href="index.html">Python <small>データを調べる</small></a></span>
-</nav>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="Python ブロック練習、先頭へ"><span class="brand-mark">Py<span>!</span></span><span>PYTHON <small>BLOCK PRACTICE</small></span></a>
-    <span class="top-tag">体験版 01 <span class="top-tag-dot">●</span> データ探偵</span>
-  </header>
-
-  <main id="top">
-    <section class="hero wrap" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="eyebrow"><span class="eyebrow-line"></span> PYTHON CAN DO THIS, TOO</p>
-        <h1 id="hero-title"><span id="hero-count">120</span>件の注文から、<br><em>答えを見つけよう。</em></h1>
-        <p class="hero-lead">今日のあなたは、カフェのデータ探偵。<br>「何が人気？」という疑問を、Pythonなら一瞬で調べられます。</p>
-        <a class="hero-link" href="#lab">さっそく調べる <span aria-hidden="true">↘</span></a>
-      </div>
-      <div class="hero-art" aria-hidden="true">
-        <div class="paper paper-back"><span>ORDER DATA / <span id="art-count">120</span> ROWS</span><i></i><i></i><i></i><i></i></div>
-        <div class="paper paper-front"><span class="paper-label">INSIGHT FOUND</span><span class="paper-chart"><b style="height:55%"></b><b style="height:88%"></b><b style="height:68%"></b><b style="height:100%"></b><b style="height:43%"></b></span><span class="paper-caption">☕ + Python = 発見!</span></div>
-        <div class="orbit orbit-one">?</div><div class="orbit orbit-two">!</div>
+<body class="learning-home">
+  <nav class="course-switch" aria-label="学習コースの切り替え"><span class="course-switch-label">学習コースを切り替える</span><span class="course-switch-links"><a href="html/index.html">HTML <small>サイトをつくる</small></a><a class="active" aria-current="page" href="index.html">Python <small>データを調べる</small></a></span></nav>
+  <header class="home-header"><div class="shell"><span class="logo">Py<span>!</span></span><span>PYTHON BLOCK PRACTICE</span><a href="html/index.html">HTML版へ ↗</a></div></header>
+  <main>
+    <section class="home-hero shell"><p class="kicker">PYTHON EXPERIENCE LAB</p><h1>やってみたら、<br><em>ちょっとびっくり。</em></h1><p>コードを知らなくても大丈夫。好きな教材を選んで、設定を変えて、Pythonを動かしてみよう。</p><span class="hero-scribble" aria-hidden="true">✳ ✦ ◌</span></section>
+    <section class="shell course-section" aria-labelledby="courses-title"><div class="section-copy"><p class="kicker">CHOOSE YOUR ADVENTURE</p><h2 id="courses-title">今日は何を試す？</h2><p>どの教材から始めてもOK。1つの教材に3つのミッションがあります。</p></div>
+      <div class="course-grid">
+        <article class="course-card data-card"><span class="course-number">01 / DATA</span><span class="course-emoji" aria-hidden="true">☕</span><h3>売上データ探偵</h3><p>120件の注文から、人気商品を一瞬で見つけよう。</p><span class="learn-tag">for・if・データ集計</span><span class="progress" data-progress="data">0 / 3 ミッション達成</span><a href="data.html">調査を始める <span aria-hidden="true">↗</span></a></article>
+        <article class="course-card gacha-card"><span class="course-number">02 / RANDOM</span><span class="course-emoji" aria-hidden="true">🎁</span><h3>自分だけのガチャ</h3><p>当たりを決めるのはPython。確率を変えると何が起きる？</p><span class="learn-tag">random・リスト・for</span><span class="progress" data-progress="gacha">0 / 3 ミッション達成</span><a href="lesson.html?lesson=gacha">ガチャを作る <span aria-hidden="true">↗</span></a></article>
+        <article class="course-card robot-card"><span class="course-number">03 / WORDS</span><span class="course-emoji" aria-hidden="true">🤖</span><h3>自分だけの会話ロボット</h3><p>覚えた言葉に返事をする、あなただけのロボットを作ろう。</p><span class="learn-tag">if・文字列・関数</span><span class="progress" data-progress="robot">0 / 3 ミッション達成</span><a href="lesson.html?lesson=robot">話しかける <span aria-hidden="true">↗</span></a></article>
+        <article class="course-card art-card"><span class="course-number">04 / ART</span><span class="course-emoji" aria-hidden="true">✳</span><h3>数行のコードで不思議なアート</h3><p>数字を少し変えるだけで、星も花もぐるぐる模様も。</p><span class="learn-tag">for・角度・座標</span><span class="progress" data-progress="art">0 / 3 ミッション達成</span><a href="lesson.html?lesson=art">絵を描く <span aria-hidden="true">↗</span></a></article>
       </div>
     </section>
-
-    <section class="intro-strip" aria-label="体験の流れ"><div class="wrap intro-grid"><div><strong>01</strong><span>問いを選ぶ</span></div><div><strong>02</strong><span>Pythonが組み立てられる</span></div><div><strong>03</strong><span>実行して発見する</span></div></div></section>
-
-    <section class="lab wrap" id="lab" aria-labelledby="lab-title">
-      <div class="section-heading"><p class="eyebrow">THE INVESTIGATION</p><h2 id="lab-title">調査をはじめよう<span class="sparkle" aria-hidden="true">✳</span></h2><p>好きな問いを選んで「Pythonで調べる」を押してみてください。</p></div>
-
-      <div class="mission-grid" role="group" aria-label="調査のお題">
-        <button class="mission active" type="button" data-mission="popular" aria-pressed="true"><span class="mission-no">MISSION 01</span><span class="mission-icon">☕</span><strong>いちばん人気は？</strong><span>すべての注文を商品ごとに数える</span><span class="mission-arrow" aria-hidden="true">↗</span></button>
-        <button class="mission" type="button" data-mission="rain" aria-pressed="false"><span class="mission-no">MISSION 02</span><span class="mission-icon">☂</span><strong>雨の日は？</strong><span>雨の日だけに絞って数える</span><span class="mission-arrow" aria-hidden="true">↗</span></button>
-        <button class="mission" type="button" data-mission="sales" aria-pressed="false"><span class="mission-no">MISSION 03</span><span class="mission-icon">¥</span><strong>売上で比べると？</strong><span>個数ではなく金額で調べる</span><span class="mission-arrow" aria-hidden="true">↗</span></button>
-      </div>
-
-      <div class="workbench">
-        <section class="controls-panel" aria-labelledby="controls-title">
-          <div class="panel-heading"><span class="panel-step">1</span><div><p>CHOOSE YOUR QUESTION</p><h3 id="controls-title">調査の条件</h3></div></div>
-          <p class="panel-desc">条件を変えると、下のPythonコードも変わります。</p>
-          <div class="control-group"><label for="weather">どの日を調べる？</label><select id="weather"><option value="all">すべての日</option><option value="rain">雨の日だけ</option><option value="sun">晴れの日だけ</option></select><p class="control-help"><code>if</code> で条件に合う注文を選びます。</p></div>
-          <div class="control-group"><label for="metric">何を比べる？</label><select id="metric"><option value="quantity">売れた個数</option><option value="sales">売上金額</option></select><p class="control-help"><code>for</code> で一件ずつ計算します。</p></div>
-          <div class="control-group"><label for="limit">上位いくつを表示？</label><select id="limit"><option value="3">上位3商品</option><option value="5">上位5商品</option></select></div>
-          <div class="data-box"><div class="data-box-head"><span class="data-icon">▦</span><div><strong id="data-name">sample.csv</strong><span id="data-count">読み込み中…</span></div></div><div class="data-actions"><label class="upload-label" for="csv-file">自分のCSVを読み込む</label><input type="file" id="csv-file" accept=".csv,text/csv"><a href="sample.csv" download>サンプルを保存 ↗</a></div><p>列名: date, weather, item, price, quantity</p></div>
-        </section>
-
-        <section class="code-panel" aria-labelledby="code-title">
-          <div class="panel-heading"><span class="panel-step">2</span><div><p>SEE THE PYTHON</p><h3 id="code-title">Pythonのコード</h3></div></div>
-          <p class="panel-desc">下のコードが本当に動きます。書き換えて試すこともできます。</p>
-          <div class="editor-head"><div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div><span>investigate.py</span><span class="language-badge">PYTHON</span></div>
-          <label class="sr-only" for="code">Pythonコードを編集</label><textarea id="code" spellcheck="false" aria-describedby="code-help"></textarea>
-          <div class="editor-foot"><span id="code-help">設定を変えるとコードが再生成されます。</span><button id="reset-code" type="button">コードを元に戻す ↺</button></div>
-          <div class="run-row"><button class="run-button" id="run" type="button" disabled><span aria-hidden="true">▶</span> Pythonで調べる</button><button class="stop-button" id="stop" type="button" hidden>停止</button></div>
-          <p class="runtime-note">初回はPythonの読み込みに少し時間がかかります。処理はブラウザ内で行います。</p>
-        </section>
-      </div>
-
-      <section class="result-panel" aria-labelledby="result-title"><div class="result-heading"><div class="panel-heading"><span class="panel-step result-step">3</span><div><p>DISCOVER THE ANSWER</p><h3 id="result-title">調査結果</h3></div></div><span id="result-status" class="status-pill" role="status">実行を待っています</span></div><div id="result-content" class="result-content"><div class="empty-state"><span aria-hidden="true">✳</span><strong>何が見つかるかな？</strong><p>「Pythonで調べる」を押すと、ここに結果が表示されます。</p></div></div></section>
-    </section>
-
-    <section class="takeaway wrap"><span class="takeaway-icon" aria-hidden="true">✳</span><div><p class="eyebrow">WHAT JUST HAPPENED?</p><h2>たくさんのデータも、<br>Pythonなら「問い」を変えるだけ。</h2><p><span id="takeaway-count">120</span>件の注文を一件ずつ読み、条件に合うものを数え、順位をつけました。これがPythonでできる「作業の自動化」の最初の一歩です。</p></div></section>
   </main>
-  <footer class="footer"><div class="wrap"><span>PYTHON BLOCK PRACTICE / PROTOTYPE 01</span><a href="html/index.html">HTML版で練習する ↗</a></div></footer>
+  <footer class="home-footer"><div class="shell">Python Block Practice <a href="html/index.html">HTMLの練習もしてみる ↗</a></div></footer>
 </body>
 </html>
