@@ -1,8 +1,8 @@
 # HTML・Python ブロック練習
 
-[既存の公開サイト](https://html-python-practice-badgio.badio.chatgpt.site) / [HTML版の元リポジトリ](https://github.com/Badgio0906/html-block-practice)
+[公開サイト](https://html-python-practice-badgio.badio.chatgpt.site) / [HTML版の元リポジトリ](https://github.com/Badgio0906/html-block-practice)
 
-上部の切り替えでHTML版とPython版を行き来できます。Python版は、初めて触る人が「こんなこともできるんだ」と感じられる4つの体験教材です。**このブランチの新教材は公開サイトにはまだ反映していません。**
+上部の切り替えでHTML版とPython版を行き来できます。Python版は、初めて触る人が「こんなこともできるんだ」と感じられる4つの体験教材です。
 
 ## 教材の一覧
 
