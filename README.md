@@ -1,5 +1,7 @@
 # HTML・Python ブロック練習
 
+[公開サイト](https://html-python-practice-badgio.badio.chatgpt.site)
+
 サイト上部の切り替えで、HTMLのサイト制作練習とPythonのデータ調査を行き来できます。HTML教材は [元のリポジトリ](https://github.com/Badgio0906/html-block-practice) の内容を `html/index.html` に統合しています。
 
 ## HTML版
