@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTML ブロック練習</title>
+<style>
+:root{
+  --bg:#f7f8f4; --card:#ffffff; --ink:#2b2f33; --sub:#6b7278; --line:#dde2dc;
+  --left:#eef6ef; --leftAc:#3f7f50; --right:#edf2f9; --rightAc:#3f5f93;
+  --tag:#1f56b0; --tagClose:#9fb5da; --attr:#8a5a14; --val:#2d7a4b; --mark:#fff3bf;
+  --pri:#e0773a; --priDk:#c2602a; --glow:#ff9d2e;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+/* overflow-x:hidden だと sticky（お題・画面の追従）が効かなくなるので clip を使う */
+html,body{margin:0;overflow-x:clip}
+body{background:var(--bg);color:var(--ink);font-family:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;font-size:19px;line-height:1.6;-webkit-text-size-adjust:100%}
+body.nofuri rt{display:none}
+rt{font-size:.5em;color:#555}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{opacity:.35;cursor:default}
+:focus-visible{outline:3px solid #2b6fd6;outline-offset:2px}
+body.dragnow{user-select:none;-webkit-user-select:none;cursor:grabbing}
+
+/* ---------- 上のバー ---------- */
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:8px 16px;background:#4c97ff;color:#fff;box-shadow:0 2px 0 #3373cc}
+.top rt{color:rgba(255,255,255,.9)}
+.top .ttl{flex:1;min-width:0;font-weight:bold;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbtn{border:2px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;border-radius:14px;padding:6px 14px;min-height:50px;display:inline-flex;align-items:center;gap:6px;font-size:18px;font-weight:bold;white-space:nowrap}
+.tbtn:hover{background:rgba(255,255,255,.25)}
+.tbtn[aria-pressed="true"]{background:rgba(0,0,0,.12);border-color:#fff}
+.tbtn .sw{display:inline-block;width:34px;height:20px;border-radius:10px;background:rgba(255,255,255,.35);position:relative}
+.tbtn .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.tbtn[aria-pressed="true"] .sw{background:#ffbf00}
+.tbtn[aria-pressed="true"] .sw::after{left:16px}
+
+/* ---------- ステージ選択 ---------- */
+.sel{max-width:1100px;margin:0 auto;padding:28px 16px 60px}
+.selh{font-size:28px;margin:0 0 22px;text-align:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px}
+.card{position:relative;border:3px solid var(--line);background:#fff;border-radius:22px;padding:18px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:190px;transition:transform .12s}
+.card:hover:not(:disabled){transform:translateY(-2px);border-color:#b8c3b8}
+.card .cico{font-size:46px;line-height:1.2}
+.card .cnum{font-size:16px;color:var(--sub)}
+.card .ctit{font-size:20px;font-weight:bold;text-align:center}
+.card .cstar{font-size:26px;color:#d6d6d6;line-height:1}
+.card.done .cstar{color:#f2b51d}
+.card.done{background:#fffdf3}
+.card.next{border-color:var(--pri);box-shadow:0 0 0 5px rgba(224,119,58,.18);animation:bob 1.6s ease-in-out infinite}
+.card .nexttag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--pri);color:#fff;border-radius:20px;padding:2px 14px;font-size:16px;font-weight:bold;white-space:nowrap}
+.card.conf{background:#f4f6fb}
+.card:disabled{background:#eef0ee}
+.card:disabled .cico{filter:grayscale(1);opacity:.5}
+.cards .sep{grid-column:1/-1;height:4px;border-top:3px dashed var(--line);margin:4px 0}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+/* ---------- 問題画面 ---------- */
+.stage{max-width:1400px;margin:0 auto;padding:16px 16px 50px}
+.goal{display:flex;align-items:center;gap:18px;background:#fff;border:2px solid var(--line);border-radius:22px;padding:14px 18px;margin-bottom:16px}
+.thumb{flex:none;position:relative;width:200px;height:132px;border:2px solid #cfd6cf;border-radius:14px;overflow:hidden;background:#fff;padding:0}
+.thumb .pv{width:400px;transform:scale(.5);transform-origin:0 0;pointer-events:none;padding:12px 16px}
+.thumb .lens{position:absolute;right:6px;bottom:6px;background:rgba(255,255,255,.95);border:2px solid #cfd6cf;border-radius:12px;padding:0 8px;font-size:15px}
+.gmain{flex:1;min-width:0}
+.gtext{font-size:24px;font-weight:bold;line-height:1.5}
+.robotRow{display:flex;align-items:center;gap:10px;margin-top:6px}
+.robot{flex:none;width:56px;height:56px}
+.bubble{position:relative;background:#f3f6fa;border:2px solid #cdd7e4;border-radius:16px;padding:6px 14px;font-size:19px}
+.bubble::before{content:"";position:absolute;left:-10px;top:50%;margin-top:-8px;border:8px solid transparent;border-right-color:#cdd7e4;border-left:0}
+.bubble.warm{background:#fff4e8;border-color:#f2c496}
+.bubble.warm::before{border-right-color:#f2c496}
+.kinds{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.kinds .k{min-width:38px;height:38px;padding:0 8px;border-radius:19px;font-family:Consolas,monospace;border:3px dashed #c7cec7;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:17px;background:#fff}
+.kinds .k.on{border-style:solid;border-color:var(--c);background:var(--t);color:var(--tag)}
+.cmpBtn{flex:none}
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;padding:8px 10px;background:#fffaf0;border:2px dashed #f0c48f;border-radius:14px}
+.strip .arr{color:#c58b4a;font-weight:bold}
+
+.main{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+.pane{border-radius:16px;padding:16px;min-width:0}
+.left{background:#fff;border:1px solid #d9dde6;container-type:inline-size}
+.right{background:#e9f1fc;border:1px solid #c5d2e6;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow:auto}
+.ph{margin:0 0 10px;font-size:22px;display:flex;align-items:center;gap:10px;color:#575e75}
+.phico{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;color:#fff;font-size:20px;background:#4c97ff}
+
+/* 左：パレット（部品）とならべる所 */
+.lgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@container (min-width:860px){ .lgrid{grid-template-columns:250px minmax(0,1fr);align-items:start} .flowdown{display:none} .tray{flex-direction:column;align-items:flex-start} .chip{max-width:240px} }
+.trayWrap{--hole:#fff;background:#fff;padding:4px 10px 8px 2px}
+.tlabel{font-size:16px;color:#575e75;font-weight:bold;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.tray{display:flex;flex-wrap:wrap;gap:22px 14px;padding-bottom:10px}
+.flowdown{text-align:center;color:#a7b3c6;font-size:26px;line-height:1;margin:0}
+
+/* ブロック：白地に種類の色の枠。中身はコード表示と同じ配色（タグは青、閉じタグは薄い青、入力欄は黄色） */
+.chip,.blk{position:relative;background:#fff;border:3px solid var(--c);border-radius:14px;color:var(--ink)}
+.chip{display:inline-flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;min-height:56px;touch-action:none;user-select:none;-webkit-user-select:none;text-align:left}
+.chip:hover{background:var(--t)}
+.chip.static{cursor:default;touch-action:auto}
+.chipcode{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.jcap{font-size:13px;color:var(--sub);line-height:1.3}
+.fakepill{display:inline-block;width:44px;height:26px;border-radius:5px;background:var(--mark);border:2px dashed #e0c75c;margin:0 2px}
+.fakepill.pic1{width:auto;padding:0 3px;display:inline-flex;align-items:center;border-style:solid}
+.fakepill.pic1 img{width:22px;height:22px}
+
+.work{min-height:160px;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px 12px 24px;border-radius:12px;background-color:#f9f9f9;background-image:radial-gradient(#d9dde3 1.2px,transparent 1.2px);background-size:22px 22px;border:1px solid #e3e6ec;transition:background-color .15s}
+.work.over{background-color:#e9f1fc;outline:3px dashed #4c97ff;outline-offset:2px}
+.drophere{border:3px dashed #c3cad6;border-radius:12px;min-height:110px;display:flex;align-items:center;justify-content:center;color:#8a93a6;font-size:20px;background:rgba(255,255,255,.6)}
+.dropline{height:8px;border-radius:4px;background:#4c97ff;flex:none;margin:4px 0}
+
+.blk{min-width:0;transition:box-shadow .15s,background .15s}
+.blk.hl{box-shadow:0 0 0 4px #ffd84d;background:var(--t)}
+.blk.dragging{opacity:.3}
+.brow{display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:10px 10px 10px 12px;min-width:0;cursor:grab}
+.brow > .badge{margin-right:8px}
+.badge{flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;font-weight:bold;font-size:18px;cursor:grab;touch-action:none}
+/* コードの文字（タグ・属性） */
+.ct{font-family:Consolas,"BIZ UDGothic","MS Gothic",monospace;font-weight:bold;font-size:20px;color:var(--tag);white-space:nowrap;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.ct.cl{color:var(--tagClose)}
+.ct.an{color:var(--attr);font-weight:normal}
+.chip .ct{cursor:inherit}
+/* 入力欄：コード表示の「自分の文字」と同じ黄色のマーカー。文字数に合わせて伸びる */
+.inp{flex:0 1 auto;width:auto;field-sizing:content;min-width:4em;max-width:100%;font-family:"BIZ UDPGothic","Meiryo",sans-serif;font-size:20px;color:#111;padding:2px 8px;margin:0 2px;border:2px solid #e6d27a;border-radius:6px;background:var(--mark)}
+.inp:focus{outline:none;border-color:#2b6fd6;box-shadow:0 0 0 3px rgba(43,111,214,.2)}
+.inp.empty{border:2px dashed #e7a35c;background:#fff}
+.pics{display:flex;flex-wrap:wrap;gap:6px;margin:0 4px}
+.pic{border:3px solid #e1e5ea;background:#fff;border-radius:12px;padding:3px 6px;display:flex;flex-direction:column;align-items:center;font-size:14px;min-width:64px;color:#333}
+.pic img{width:40px;height:40px}
+.pic[aria-pressed="true"]{border-color:var(--c);background:var(--t)}
+.pic[aria-pressed="true"]::after{content:"✔";color:var(--d);font-weight:bold;line-height:1}
+.ctrl{flex:none;display:flex;gap:6px;margin-left:auto;padding-left:8px}
+.cb{width:42px;height:42px;border-radius:50%;border:2px solid #d3d8e0;background:#f6f7f9;color:#575e75;font-size:17px;display:flex;align-items:center;justify-content:center;padding:0}
+.cb:hover:not(:disabled){background:#e9edf2}
+.cb.del{color:#d6334f;font-size:26px;font-weight:bold;border-color:#f0c4cc;background:#fff6f7}
+/* 箇条書き：<ul> の中に <li> が3つ（線でつないで入れ子を見せる） */
+.cmouth{position:relative;margin:0 12px 2px 56px;padding-left:22px;border-left:3px solid #b9c7de;display:flex;flex-direction:column;gap:6px}
+.liblk{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:2px;border:2px dashed #b9c7de;border-radius:10px;padding:4px 10px;background:#f8fafd;max-width:440px}
+.liblk::before{content:"";position:absolute;left:-26px;top:50%;width:22px;border-top:3px solid #b9c7de}
+.cfoot{padding:4px 12px 10px 56px;cursor:grab;touch-action:none}
+.ochip .ct{font-size:17px}
+/* 箱ブロック（header・main・footer）：開始タグと終了タグの間の口に、ほかのブロックが入る */
+.kids{position:relative;margin:0 10px 2px 30px;padding:8px 10px;border-left:4px solid var(--c);border-radius:0 10px 10px 0;background:rgba(255,255,255,.55);display:flex;flex-direction:column;gap:8px;min-height:58px}
+.blk.box{background:var(--t)}
+.blk.box.hl{background:var(--t)}
+.blk.box.into{outline:4px solid var(--c);outline-offset:2px}
+.blk.box.into > .brow::after{content:"追加先";margin-left:8px;font-size:13px;font-weight:bold;color:#fff;background:var(--c);border-radius:999px;padding:1px 10px}
+.kids.over{outline:3px dashed #4c97ff;outline-offset:-3px;background:#e9f1fc}
+.kidsempty{border:2px dashed #c3cad6;border-radius:10px;padding:10px;color:#8a93a6;font-size:15px;text-align:center;background:#fff}
+@media (max-width:600px){ .kids{margin-left:12px;padding:6px} .kids .cmouth{margin-left:20px} .kids .cfoot{padding-left:20px} }
+.fakebox{display:inline-block;padding:0 6px;color:var(--sub);font-weight:bold}
+.tlabel{flex-wrap:wrap}
+.intoTag{margin-left:auto;font-size:13px;padding:2px 10px;border-radius:999px;background:#eef1f6;color:#575e75;white-space:nowrap}
+.intoTag.on{background:#fff3bf}
+.intoTag .ct{font-size:13px}
+/* 箱を表示：要素ごとの枠とタグ名（開発者ツールの表示に近い） */
+.boxtgl{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:bold;color:#46546f;cursor:pointer;user-select:none;white-space:nowrap}
+.boxtgl input{width:16px;height:16px;margin:0;accent-color:#0b7d7d;cursor:pointer}
+.pv.boxes [data-t]{outline:2px dashed var(--bc,#8a93a6);outline-offset:-1px;position:relative}
+.pv.boxes :is(h1,h2,p,ul,li,header,main,footer)[data-t]{padding:18px 8px 6px}
+.pv.boxes ul[data-t]{padding-left:40px}
+.pv.boxes li[data-t]{padding:16px 6px 4px;margin:4px 0}
+.pv.boxes :is(header,main,footer)[data-t]{margin:8px 0;min-height:44px;outline-width:3px;outline-style:solid}
+.pv.boxes :is(h1,h2,p,ul,li,header,main,footer)[data-t]::before{content:"<" attr(data-t) ">";position:absolute;top:2px;left:4px;font:bold 11px/1.2 Consolas,monospace;color:#fff;background:var(--bc,#8a93a6);padding:1px 5px;border-radius:4px}
+.pv.boxes :is(a,strong)[data-t]::before{content:"<" attr(data-t) ">";font:bold 10px/1.2 Consolas,monospace;color:#fff;background:var(--bc,#8a93a6);padding:1px 4px;border-radius:3px;margin-right:3px;vertical-align:middle}
+.pv.boxes .hl{outline:4px solid var(--c);outline-offset:2px}
+.boxtgl + .boxtgl{margin-left:12px}
+.why{max-width:520px;margin:4px auto 14px;text-align:left;font-size:16px;line-height:1.7;background:#f3fbfb;border:2px solid #9fd8d8;border-radius:12px;padding:10px 14px;color:#2b3a3a}
+.why b{display:block;color:#0b7d7d;margin-bottom:2px}
+.wrongfig .pv{min-height:170px}
+/* 共通の部分の練習：ページ切り替えタブと、3ページを並べた説明 */
+.pgtabs{display:flex;gap:4px;margin:0 0 6px;flex-wrap:wrap}
+.pgtab{border:2px solid #c5d2e6;border-bottom-width:3px;background:#f3f6fb;border-radius:10px 10px 4px 4px;padding:2px 7px;font-size:13px;font-weight:bold;color:#5b6f8f;white-space:nowrap}
+.pgtab[aria-selected="true"]{background:#fff;border-color:#0fa3a3;color:#0b7d7d}
+.pgtab.seen::after{content:" ✔";color:#389438}
+.pagesfig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pagesfig h3{margin:0 0 4px;font-size:14px;color:#575e75}
+.pagesfig .pv{min-height:150px;font-size:12px}
+@media (max-width:600px){ .pagesfig{grid-template-columns:minmax(0,1fr)} }
+/* デザインを付ける：実際のサイトのように、箱ごとに見た目を決める（CSS の役割の体験） */
+.pv.design{padding:0;background:#eef1f5;display:flex;flex-direction:column}
+.pv.design > .sfit{display:flex;flex-direction:column;flex:1 0 auto}
+:is(.pv.design,.pv.design > .sfit) > :not(header,main,footer,.pvempty,.sfit){margin-left:20px;margin-right:20px}
+:is(.pv.design,.pv.design > .sfit) > header{background:#0b7d7d;color:#fff;padding:14px 20px;margin:0}
+:is(.pv.design,.pv.design > .sfit) > header :is(h1,h2){margin:0;color:#fff}
+:is(.pv.design,.pv.design > .sfit) > header p{margin:.3em 0 0;color:#d8f1f1}
+:is(.pv.design,.pv.design > .sfit) > header a{color:#fff}
+:is(.pv.design,.pv.design > .sfit) > main{background:#fff;margin:12px;padding:10px 18px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+:is(.pv.design,.pv.design > .sfit) > main > :first-child{margin-top:0}
+:is(.pv.design,.pv.design > .sfit) > footer{margin-top:auto;background:#3a3f4a;color:#c3c8d0;font-size:12px;padding:10px 20px;text-align:center}
+:is(.pv.design,.pv.design > .sfit) > footer :is(h1,h2,p,ul){font-size:1em;font-weight:normal;margin:.2em 0}
+:is(.pv.design,.pv.design > .sfit) > footer a{color:#c3c8d0}
+.pv.design .pvempty{padding:14px 20px}
+/* 練習11の説明：ページの3つの箱 */
+.pgfig{display:flex;flex-direction:column;gap:6px;max-width:460px;margin:0 auto}
+.pgbox{display:flex;align-items:center;gap:12px;border:3px solid var(--c);background:var(--t);border-radius:10px;padding:8px 14px;font-size:16px}
+.pgbox:nth-child(2){min-height:90px}
+/* 箱の正解の形 */
+.tstrip{flex-direction:column;align-items:stretch}
+.tbox{border:2px solid var(--c);background:var(--t);border-radius:8px;padding:4px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tkids{display:flex;flex-wrap:wrap;gap:4px}
+.tnone{font-size:12px;color:var(--sub)}
+
+.wbtns{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.sbtn{border:1px solid #c9d0dc;background:#fff;border-radius:999px;min-height:52px;padding:6px 18px;font-size:18px;color:#575e75;font-weight:bold}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;align-items:center}
+.donebtn{flex:1;min-width:200px;border:0;border-radius:20px;background:#59c059;color:#fff;font-size:28px;font-weight:bold;min-height:72px;box-shadow:0 5px 0 #389438}
+.donebtn:active{transform:translateY(3px);box-shadow:0 2px 0 #389438}
+.skipbtn{border:1px solid #c9d0dc;background:#fff;border-radius:16px;min-height:56px;padding:6px 16px;font-size:17px;color:var(--sub)}
+
+/* 右：表示結果（常に表示） */
+.right .ph .phico{background:#59c059}
+.right #pv{min-height:300px}
+.pv .flash{animation:pvflash 1.2s ease-out 1}
+@keyframes pvflash{0%{background:transparent}25%{background:#fff3bf}100%{background:transparent}}
+
+/* ブラウザ風の枠とプレビュー */
+.browser{background:#fff;border:3px solid #c5d2e6;border-radius:16px;overflow:hidden}
+.bbar{display:flex;gap:6px;align-items:center;padding:8px 12px;background:#e6ecf5;border-bottom:2px solid #d3dcea}
+.bbar i{width:12px;height:12px;border-radius:50%;background:#c3ccd9;display:block}
+.bbar .bl{margin-left:8px;font-size:15px;color:#6a7a92}
+.pv{padding:14px 20px;min-height:120px;font-family:"BIZ UDPGothic","Meiryo",sans-serif;font-size:16px;line-height:1.5;color:#000;overflow-wrap:anywhere}
+.pv h1{font-size:2em;font-weight:bold;margin:.67em 0}
+.pv h2{font-size:1.5em;font-weight:bold;margin:.83em 0}
+.pv p{margin:1em 0}
+.pv ul{margin:1em 0;padding-left:40px;list-style:disc}
+.pv hr{border:0;border-top:2px solid #aaa;margin:.5em 0}
+.pv img{max-width:100%;vertical-align:bottom}
+.pv a{color:#0b3dd6;text-decoration:underline;cursor:pointer}
+.pv strong{font-weight:bold}
+.pv > :first-child{margin-top:0}
+.pv .hl{outline:4px solid var(--c);outline-offset:3px;border-radius:2px}
+.pvempty{color:#aab3c0;text-align:center;padding:30px 0;font-size:18px}
+
+/* ---------- モーダル ---------- */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(40,48,44,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto}
+.mbox{background:#fff;border-radius:26px;max-width:880px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:auto 0}
+.mtitle{font-size:26px;font-weight:bold;margin:0 0 14px;text-align:center}
+.mbtns{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:20px}
+.bigok{border:0;border-radius:20px;background:var(--pri);color:#fff;font-size:24px;font-weight:bold;min-height:64px;padding:6px 36px;box-shadow:0 5px 0 var(--priDk)}
+.bigok:active{transform:translateY(3px);box-shadow:0 2px 0 var(--priDk)}
+.bigsub{border:2px solid #cfd6cf;background:#fff;border-radius:18px;font-size:20px;min-height:60px;padding:6px 24px}
+.ihead{text-align:center;color:var(--sub);font-size:18px}
+.igoal{text-align:center;font-size:26px;font-weight:bold;margin:2px 0 14px}
+.ibig .pv{min-height:160px;font-size:17px}
+.newp{margin-top:16px;padding:14px;border:2px solid #f0d7a8;background:#fffbf1;border-radius:18px}
+.newp .nl{font-weight:bold;color:#b06a1e;margin-bottom:8px}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.flow > .fx{flex:1 1 200px;min-width:0}
+.flow .farr{font-size:30px;color:#c58b4a;font-weight:bold;flex:none}
+.flow .browser .pv{min-height:0;padding:8px 12px}
+.cap{text-align:center;font-size:20px;margin-top:10px}
+.boxfig{display:flex;align-items:stretch;justify-content:center;gap:0;margin:14px auto 0;flex-wrap:wrap}
+.boxfig .lid{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 10px;background:#e8effb;border:3px solid var(--tag);font-family:Consolas,monospace;font-weight:bold;color:var(--tag);font-size:22px}
+.boxfig .lid small{font-family:inherit;font-size:14px;color:var(--sub);font-weight:normal}
+.boxfig .lid.o{border-radius:16px 0 0 16px;border-right:0}
+.boxfig .lid.c{border-radius:0 16px 16px 0;border-left:0;color:var(--tagClose);border-color:var(--tag)}
+.boxfig .mid{display:flex;align-items:center;padding:6px 16px;border-top:3px solid var(--tag);border-bottom:3px solid var(--tag);font-size:22px;background:var(--mark)}
+.orderfig{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:14px}
+.ostack{display:flex;flex-direction:column;gap:8px}
+.ochip{display:flex;align-items:center;gap:8px;border:3px solid var(--c);border-radius:10px;padding:4px 10px;background:#fff}
+.koma .ctrl{display:none}
+
+/* タグの説明（マウスを合わせると出る）と使用例 */
+.work .ct[data-tag],#tray .ct[data-tag]{cursor:help}
+.jrow{display:flex;align-items:center;gap:10px;width:100%}
+.addbtn{margin-left:auto;flex:none;background:var(--c);color:#fff;font-weight:bold;font-size:15px;border-radius:999px;padding:2px 12px;line-height:1.6}
+.addbtn rt{color:rgba(255,255,255,.9)}
+.chip:hover .addbtn{filter:brightness(1.08)}
+.ct[data-tag]:hover{text-decoration:underline dotted 2px;text-underline-offset:4px}
+.tip{position:fixed;z-index:160;max-width:340px;background:#2b2f33;color:#fff;border-radius:10px;padding:10px 14px;font-size:16px;line-height:1.55;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none}
+.tip b{font-family:Consolas,monospace;color:#ffd84d;margin-right:6px}
+.tip small{display:block;margin-top:4px;color:#b9c7de;font-size:14px}
+/* 名前の由来：名前になっている英字を下線付きで強調 */
+.tip .orig{display:block;margin:6px 0;padding:6px 8px;background:rgba(255,255,255,.1);border-radius:6px;font-size:15px}
+.tip .orig b{font-family:inherit;margin:0;color:#ffd84d;text-decoration:underline;text-underline-offset:3px}
+.exorig{text-align:center;font-size:18px;margin:0 auto 8px;padding:8px 14px;background:#f3f8ff;border:1px solid #cfe0f7;border-radius:12px;max-width:720px}
+.exorig b{color:var(--tag);font-size:1.15em;text-decoration:underline;text-underline-offset:3px}
+.exdesc{text-align:center;font-size:19px;margin:0 0 14px}
+.exlist{display:flex;flex-direction:column;gap:14px}
+.excard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch;border:2px solid var(--line);border-radius:16px;padding:12px}
+.excard .exn{grid-column:1/-1;font-weight:bold;color:var(--sub);font-size:16px}
+.excode{margin:0;background:#f7f9fc;border:1px solid #dfe5ee;border-radius:10px;padding:10px 12px;font-family:Consolas,"BIZ UDGothic",monospace;font-size:17px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:#111}
+.excode .tg{color:var(--tag);font-weight:bold}
+.excode .tc{color:var(--tagClose);font-weight:bold}
+.excode .an{color:var(--attr)}
+.excode .av{color:var(--val)}
+.excard .pv{min-height:0;padding:8px 14px}
+@media (max-width:640px){ .excard{grid-template-columns:minmax(0,1fr)} }
+
+/* 縦3列：左＝お題・見本・ヒント／真ん中＝ブロック／右＝画面 */
+/* 下の余白を小さくして、一番下までスクロールしても左右の列が上のバーに隠れないようにする */
+.stage{max-width:1800px;padding-bottom:14px}
+.main3{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.5fr) minmax(0,.95fr);gap:16px;align-items:start}
+.main3 .info,.main3 .right{position:sticky;top:78px;max-height:calc(100vh - 92px);overflow:auto}
+.info{background:#fff8ef;border:1px solid #f1d9ba}
+.info .phico{background:#ff8c1a}
+.info{padding:12px 14px}
+.info .ph{margin-bottom:4px}
+.info .gtext{font-size:19px;line-height:1.45}
+.ilabel{display:flex;align-items:center;gap:8px;font-weight:bold;color:#575e75;margin:10px 0 4px;font-size:16px}
+.info .bubble{font-size:17px;padding:4px 12px}
+.info .robot{width:44px;height:44px}
+.linkbtn{margin-left:auto;border:1px solid #d9dde6;background:#fff;border-radius:999px;padding:2px 12px;font-size:15px;font-weight:normal}
+.info .pv{font-size:14px;min-height:0;padding:8px 14px}
+.info .pv img{max-width:100px}
+.sfit > :first-child{margin-top:0}
+.sfit > :last-child{margin-bottom:0}
+.info .cmpBtn{width:100%;margin-top:8px;font-size:16px;min-height:44px;padding:4px 12px}
+.info .robotRow{align-items:flex-start}
+.info .bubble{flex:1;min-width:0}
+.info .strip{gap:4px;padding:6px 8px;margin-top:8px}
+.info .ochip{padding:1px 6px;gap:4px;border-width:2px;border-radius:8px}
+.info .ochip .ct{font-size:14px}
+.info .ochip .badge{width:20px!important;height:20px!important;font-size:12px!important}
+.info .strip .arr{font-size:11px}
+.info .tsay{font-size:19px;margin:10px 0 0;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid #f1d9ba}
+@media (max-width:1180px){
+  .main3{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+  .main3 .info{grid-column:1/-1;position:static;max-height:none}
+}
+@media (max-width:960px){
+  .main3{grid-template-columns:minmax(0,1fr)}
+  .main3 .right{position:static;max-height:none;overflow:visible}
+}
+
+/* 部品一覧はコンパクトに（並べる場所がすぐ下に見えるように） */
+.main3 .trayWrap{padding:0 0 4px}
+.main3 .tlabel{margin-bottom:6px;font-size:15px}
+.main3 .tray{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px;padding-bottom:4px}
+.main3 .chip{padding:6px 10px;min-height:0;gap:2px;border-width:2px;border-radius:10px;min-width:0}
+.main3 .chip .ct{font-size:16px}
+.main3 .chip .fakepill{width:30px;height:20px}
+.main3 .chip .fakepill.pic1{height:22px}
+.main3 .chip .fakepill.pic1 img{width:16px;height:16px}
+.main3 .chip .jcap{font-size:12px}
+.main3 .chip .addbtn{font-size:13px;padding:0 10px}
+.main3 .flowdown{font-size:20px;margin:2px 0}
+.main3 .chipcode{row-gap:0}
+
+/* 右：ブラウザ／コードの切り替えタブ */
+.vtabs{margin-left:auto;display:inline-flex;gap:4px;background:#d9e3f2;padding:3px;border-radius:12px}
+.vtab{border:0;background:transparent;border-radius:9px;padding:4px 12px;font-size:15px;font-weight:bold;color:#5b6f8f;white-space:nowrap}
+.vtab[aria-selected="true"]{background:#fff;color:#3373cc;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.vtab .ti{font-family:Consolas,monospace}
+/* コード画面：本物のエディタ（VS Code 風）に近い文字の大きさ・並び・色 */
+.bbar{height:30px}
+.editor{background:#1e1e1e;border:3px solid #2d2d2d;border-radius:16px;overflow:hidden}
+.ebar{height:30px;display:flex;align-items:flex-end;gap:6px;background:#252526;border-bottom:2px solid #333;padding:0 10px}
+.etab{background:#1e1e1e;color:#d4d4d4;font-family:Consolas,monospace;font-size:13px;line-height:1;padding:6px 14px 5px;border-radius:6px 6px 0 0;border-top:2px solid #4c97ff}
+.ecode{position:relative;min-height:300px;overflow:auto;padding:8px 0;font-family:Consolas,"Courier New","BIZ UDGothic",monospace;font-size:14px;line-height:1.6;color:#d4d4d4;white-space:pre}
+.eln{display:block;border-left:3px solid transparent}
+.eblk{display:block;transition:background .15s}
+.eblk .eln{border-left-color:transparent}
+.lnno{display:inline-block;width:2.6em;padding-right:1.2em;text-align:right;color:#6e7681;user-select:none}
+.ecode .tg,.ecode .tc{color:#569cd6;font-weight:normal}
+.ecode .an{color:#9cdcfe}
+.ecode .av{color:#ce9178}
+.eblk.hl{background:rgba(255,216,77,.16)}
+.eblk.hl .eln{border-left-color:#ffd84d}
+.eblk.hl .lnno{color:#ffd84d}
+.eblk.flash{animation:eflash 1.2s ease-out 1}
+@keyframes eflash{25%{background:rgba(255,216,77,.32)}}
+
+/* 確認A・B：部品の意味の表示切り替え（隠しても並びがずれないよう visibility で隠す） */
+.hidejcap .jcap{visibility:hidden}
+.jtoggle{margin-left:auto;display:inline-flex;align-items:center;gap:10px;font-size:17px;font-weight:bold;color:#575e75;cursor:pointer;border:2px solid #d9dde6;border-radius:12px;padding:6px 14px;background:#fff;user-select:none}
+.jtoggle:hover{border-color:#4c97ff}
+.jtoggle input{width:24px;height:24px;margin:0;accent-color:#4c97ff;cursor:pointer}
+
+/* 完成ページの保存 */
+.savecode{max-height:420px;overflow:auto}
+.savecode .dl{display:block;padding:0 6px;border-radius:4px}
+.savecode .dl.inb{background:#fff3bf}
+.savenote{text-align:center;font-size:17px;color:var(--sub);margin:14px 0 0}
+.savenote.done{color:#2d7a4b;font-weight:bold;font-size:18px}
+
+/* タイピング編 */
+.qnum{margin-left:auto;font-size:17px;color:var(--sub);font-weight:bold}
+.tcode{background:#fff;border:3px solid #c5d2e6;border-radius:14px;padding:16px 18px;font-family:Consolas,"BIZ UDGothic",monospace;font-size:24px;line-height:2.1;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--tag);font-weight:bold}
+.tcode .ct{font-size:inherit}
+.ttx{color:#111;font-weight:normal;background:var(--mark);border-radius:4px;padding:0 3px;font-family:"BIZ UDPGothic","Meiryo",sans-serif}
+.tinp{font-family:Consolas,monospace;font-size:24px;font-weight:bold;color:#111;padding:2px 8px;border:3px solid #4c97ff;border-radius:8px;background:#f3f8ff;min-width:3.5em;width:auto;field-sizing:content;margin:0 3px;vertical-align:middle;ime-mode:disabled}
+.tinp:focus{outline:none;box-shadow:0 0 0 4px rgba(76,151,255,.3)}
+.tinp.ok{border-color:#3f9a5b;background:#e9f7ee}
+.tinp.tline{width:100%;field-sizing:fixed;margin:0}
+.tblank{display:inline-block;border:3px dashed #4c97ff;border-radius:8px;padding:0 8px;background:#f3f8ff;color:#111;line-height:1.6}
+.tsay{font-size:20px;margin:0 0 10px}
+.kbtips{margin:0;padding-left:1.4em;font-size:18px;line-height:1.8}
+/* 答え合わせの正誤（○ / ✕） */
+.tmark{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-size:18px;font-weight:bold;vertical-align:middle;margin:0 2px;font-family:"BIZ UDPGothic","Meiryo",sans-serif}
+.tmark.ok{background:#3f9a5b;color:#fff}
+.tmark.ng{background:#d6334f;color:#fff}
+.tinp.glow{border-color:#d6334f;background:#fff4f5}
+.tresult{margin-top:10px;padding:8px 14px;border-radius:10px;font-weight:bold;font-size:18px}
+.tresult.ok{background:#e9f7ee;color:#2d7a4b;border:2px solid #9fd4b0}
+.tresult.ng{background:#fff4f5;color:#b0283f;border:2px solid #f0b8c2}
+.bubble code{font-family:Consolas,monospace;font-weight:bold;color:var(--tag);background:#fff;border-radius:4px;padding:0 4px}
+.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cmpgrid h3{margin:0 0 8px;font-size:22px;text-align:center}
+.cmpgrid .pv{min-height:200px}
+
+/* ガイド */
+.komas{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;justify-content:center}
+.koma{flex:1 1 210px;min-width:0;border:3px solid var(--line);border-radius:20px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:10px;background:#fbfcfb}
+.koma .kn{width:42px;height:42px;border-radius:50%;background:var(--ink);color:#fff;font-weight:bold;font-size:22px;display:flex;align-items:center;justify-content:center}
+.koma .kart{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:130px}
+.koma .kcap{font-size:21px;font-weight:bold;text-align:center}
+.karr{align-self:center;font-size:32px;color:#c58b4a;font-weight:bold}
+.hand{font-size:34px;margin-left:-8px;margin-top:30px}
+
+/* ヒントで光らせる */
+.glow{position:relative;animation:glow 1s ease-in-out 4;box-shadow:0 0 0 5px var(--glow)!important}
+.glow::after{content:"！";position:absolute;top:-14px;right:-10px;width:30px;height:30px;border-radius:50%;background:var(--glow);color:#fff;font-weight:bold;font-size:18px;display:flex;align-items:center;justify-content:center;z-index:2}
+@keyframes glow{0%,100%{box-shadow:0 0 0 5px var(--glow)}50%{box-shadow:0 0 0 11px rgba(255,157,46,.35)}}
+.posTag{position:absolute;left:-6px;top:-14px;background:var(--glow);color:#fff;border-radius:12px;padding:0 8px;font-size:15px;font-weight:bold;z-index:2}
+
+/* ほめる演出 */
+.clearbox{text-align:center}
+.bigstar{font-size:110px;line-height:1;color:#f2b51d;animation:pop .6s cubic-bezier(.2,1.6,.4,1) 1;text-shadow:0 4px 0 #d79a0a}
+.cl1{font-size:40px;font-weight:bold;margin:6px 0 4px}
+@keyframes pop{0%{transform:scale(.2) rotate(-30deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:120;overflow:hidden}
+.confetti i{position:absolute;top:-20px;width:12px;height:16px;border-radius:3px;animation:fall 1.7s ease-in forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.6}}
+.shake{animation:shake .4s 1}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.ghost{position:fixed;left:0;top:0;z-index:150;pointer-events:none;opacity:.9;box-shadow:0 12px 30px rgba(0,0,0,.25);transform-origin:0 0}
+
+/* ---------- 画面が狭いとき ---------- */
+@media (max-width:960px){
+  .main{grid-template-columns:minmax(0,1fr)}
+  .right{position:static;max-height:none;overflow:visible}
+}
+@media (max-width:640px){
+  body{font-size:18px}
+  .goal{flex-direction:column;align-items:stretch}
+  .thumb{align-self:center}
+  .gtext{font-size:21px}
+  .top{padding:6px 10px;gap:6px}
+  .top .ttl{font-size:17px}
+  .tbtn{padding:4px 10px;font-size:16px}
+  .tbtn .lbl{display:none}
+  .cmpgrid{grid-template-columns:1fr}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .mbox{padding:18px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+}
+
+/* HTML・Python 共通のコース切り替え */
+.course-switch{position:sticky;top:0;z-index:60;min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 16px;background:#101b29;color:#fff;box-shadow:0 2px 8px #101b2922}
+.course-switch-label{font-size:13px;font-weight:800;letter-spacing:.04em}
+.course-switch-links{display:flex;gap:4px;background:#2b3b4c;padding:3px;border-radius:10px}
+.course-switch-links a{display:flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:5px 13px;border-radius:7px;text-decoration:none;color:#edf4f3;font-size:14px;font-weight:800;white-space:nowrap}
+.course-switch-links a.active{background:#fff;color:#172337}
+.course-switch-links a:hover:not(.active){background:#435568}
+.course-switch-links a:focus-visible{outline:3px solid #f4c16f;outline-offset:2px}
+.course-switch-links small{font-size:10px;font-weight:600;opacity:.78}
+@media(max-width:540px){.course-switch{padding-inline:8px}.course-switch-label{font-size:11px}.course-switch-links a{font-size:12px;padding-inline:8px}.course-switch-links small{display:none}}
+.top{top:56px}
+</style>
+</head>
+<body>
+<nav class="course-switch" aria-label="学習コースの切り替え">
+  <span class="course-switch-label">学習コースを切り替える</span>
+  <span class="course-switch-links"><a class="active" aria-current="page" href="index.html">HTML <small>サイトをつくる</small></a><a href="../index.html">Python <small>データを調べる</small></a></span>
+</nav>
+<header class="top">
+  <button class="tbtn" id="backBtn" hidden>◀ <span>戻る</span></button>
+  <div class="ttl" id="topTitle"></div>
+  <button class="tbtn" id="furiBtn" aria-pressed="false"><span class="sw"></span><span>ふりがな</span></button>
+  <button class="tbtn" id="guideBtn">？<span class="lbl">使い方</span></button>
+</header>
+<main id="app"></main>
+<div class="modal" id="modal" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ===================== 小さな道具 ===================== */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// {漢字|かんじ} → <ruby>
+const fu = s => s.replace(/\{([^|}]+)\|([^}]+)\}/g, '<ruby>$1<rt>$2</rt></ruby>');
+const plain = s => s.replace(/\{([^|}]+)\|[^}]+\}/g, '$1');
+
+/* ===================== 保存（使えなくても動く） ===================== */
+const KEY = 'html-block-renshu-v1';
+function loadProg(){
+  let p = {};
+  try { p = JSON.parse(window.localStorage.getItem(KEY)) || {}; } catch(e) { p = {}; }
+  if (typeof p !== 'object' || !p) p = {};
+  if (!p.cleared || typeof p.cleared !== 'object') p.cleared = {};
+  if (typeof p.furi !== 'boolean') p.furi = false;
+  if (typeof p.design !== 'boolean') p.design = true;
+  return p;
+}
+function saveProg(){
+  try { window.localStorage.setItem(KEY, JSON.stringify(prog)); } catch(e) { /* 保存できなくても続ける */ }
+}
+const prog = loadProg();
+
+/* ===================== 絵（SVG） ===================== */
+const PICS = [
+  {id:'cat', name:'ねこ', svg:'<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="#fdf1dc"/><polygon points="20,44 27,12 47,32" fill="#ee9b45"/><polygon points="80,44 73,12 53,32" fill="#ee9b45"/><polygon points="26,38 29,22 39,32" fill="#f7c9a0"/><polygon points="74,38 71,22 61,32" fill="#f7c9a0"/><circle cx="50" cy="56" r="31" fill="#ee9b45"/><circle cx="39" cy="51" r="4.5" fill="#333"/><circle cx="61" cy="51" r="4.5" fill="#333"/><polygon points="46,59 54,59 50,64" fill="#c9605a"/><path d="M43 67 Q50 72 57 67" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M14 58 H33 M15 66 H33 M67 58 H86 M67 66 H85" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>'},
+  {id:'flower', name:'花', svg:'<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="#eaf6ea"/><path d="M50 55 V94" stroke="#4f9a4f" stroke-width="5"/><ellipse cx="38" cy="80" rx="12" ry="6" fill="#6cb36c" transform="rotate(-25 38 80)"/><g fill="#f28fb0"><circle cx="50" cy="22" r="13"/><circle cx="72" cy="38" r="13"/><circle cx="64" cy="62" r="13"/><circle cx="36" cy="62" r="13"/><circle cx="28" cy="38" r="13"/></g><circle cx="50" cy="44" r="11" fill="#ffd34d"/></svg>'},
+  {id:'onigiri', name:'おにぎり', svg:'<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="#eef3fb"/><path d="M50 12 C58 12 92 66 88 78 C85 88 15 88 12 78 C8 66 42 12 50 12 Z" fill="#ffffff" stroke="#c8cfd8" stroke-width="2"/><rect x="34" y="60" width="32" height="26" rx="3" fill="#2f3d33"/><circle cx="40" cy="48" r="3" fill="#333"/><circle cx="60" cy="48" r="3" fill="#333"/><path d="M45 54 Q50 58 55 54" stroke="#333" stroke-width="2" fill="none"/></svg>'},
+  {id:'star', name:'星', svg:'<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="#2f3f66"/><circle cx="20" cy="20" r="2" fill="#fff"/><circle cx="82" cy="26" r="2" fill="#fff"/><circle cx="76" cy="84" r="2" fill="#fff"/><polygon points="50,14 60,40 88,40 65,57 74,84 50,67 26,84 35,57 12,40 40,40" fill="#ffd34d" stroke="#f0b400" stroke-width="2" stroke-linejoin="round"/></svg>'}
+];
+const picById = id => PICS.find(p => p.id === id) || PICS[0];
+const picURI = id => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(picById(id).svg);
+
+/* ===================== ブロックの種類 ===================== */
+const TYPES = {
+  h1:     {label:'{大|おお}きな{見出|みだ}し', def:() => ({text:'私のページ'})},
+  h2:     {label:'{小|ちい}さな{見出|みだ}し', def:() => ({text:'好きなもの'})},
+  p:      {label:'{文章|ぶんしょう}',          def:() => ({text:'はじめまして。'})},
+  img:    {label:'{画像|がぞう}',              def:() => ({pic:'cat'})},
+  ul:     {label:'{箇条書|かじょうが}き',      def:() => ({items:['おにぎり','ねこ','音楽']})},
+  a:      {label:'リンク',                     def:() => ({text:'好きなサイト', href:'https://example.com'})},
+  strong: {label:'{太字|ふとじ}の{文章|ぶんしょう}', def:() => ({text:'よろしくお願いします！'})},
+  hr:     {label:'{区切|くぎ}り{線|せん}',     def:() => ({})},
+  // 箱ブロック：中にほかのブロックを入れる（kids）
+  header: {label:'ページの{上部|じょうぶ}', def:() => ({kids:[]})},
+  main:   {label:'{主|おも}な{内容|ないよう}', def:() => ({kids:[]})},
+  footer: {label:'ページの{下部|かぶ}', def:() => ({kids:[]})}
+};
+const ALL = ['h1','h2','p','img','ul','a','strong','hr'];
+const BOXES = ['header','main','footer'];
+const isBox = t => BOXES.indexOf(t) >= 0;
+// ブロックの色（種類ごと）：[枠の色, 濃い色, うすい色]。左のブロックと右の画面の対応は同じ色＋同じ番号で示す
+const COL = {
+  h1:['#4c97ff','#3373cc','#e3eeff'], h2:['#5cb1d6','#2e8eb8','#e1f2f9'], p:['#9966ff','#774dcb','#efe6ff'],
+  img:['#cf63cf','#bd42bd','#f8e3f8'], ul:['#ff8c1a','#db6e00','#ffeedd'], a:['#59c059','#389438','#e2f5e2'],
+  strong:['#ffab19','#cf8b17','#fff2d9'], hr:['#ff6680','#ff3355','#ffe3e8'],
+  header:['#0fa3a3','#0b7d7d','#dcf4f4'], main:['#5d6d8f','#46546f','#e6eaf2'], footer:['#a0784a','#7f5c35','#f4ebdf']
+};
+const colVars = t => '--c:' + COL[t][0] + ';--d:' + COL[t][1] + ';--t:' + COL[t][2];
+// 「箱を表示」の枠の色も、ブロックと同じ種類の色にする
+(() => {
+  const css = document.createElement('style');
+  css.textContent = Object.keys(COL).map(t => '.pv [data-t="' + t + '"]{--bc:' + COL[t][1] + '}').join('') + '.pv [data-t="li"]{--bc:' + COL.ul[0] + '}';
+  document.head.appendChild(css);
+})();
+
+/* ===================== タグの説明と使用例 ===================== */
+const TAGINFO = {
+  h1:  {name:'{大|おお}きな{見出|みだ}し', desc:'ページで一番大きな見出しです。ページの題名に使い、1ページに1つが基本です。',
+        ex:['<h1>私のページ</h1>', '<h1>今日の献立</h1>\n<p>カレーライスです。</p>', '<h1>お知らせ</h1>\n<h2>営業時間</h2>\n<p>9時から17時までです。</p>']},
+  h2:  {name:'{小|ちい}さな{見出|みだ}し', desc:'<h1> の次に大きい見出しです。ページの中の話題ごとに付けます。',
+        ex:['<h2>好きな食べ物</h2>\n<p>おにぎりです。</p>', '<h2>趣味</h2>\n<p>散歩です。</p>\n<h2>特技</h2>\n<p>料理です。</p>', '<h1>私のページ</h1>\n<h2>自己紹介</h2>']},
+  p:   {name:'{文章|ぶんしょう}', desc:'ひとまとまりの文章（段落）です。前後に少し余白ができます。',
+        ex:['<p>はじめまして。</p>', '<p>1つ目の段落です。</p>\n<p>2つ目の段落です。</p>', '<h2>趣味</h2>\n<p>休日は散歩をしています。</p>']},
+  img: {name:'{画像|がぞう}', desc:'画像を表示します。src に画像のファイル名、alt に画像の説明を書きます。閉じタグはありません。',
+        ex:['<img src="ねこ.svg" alt="ねこ">', '<img src="花.svg" alt="花">\n<p>庭に咲いた花です。</p>', '<h2>今日のお昼</h2>\n<img src="おにぎり.svg" alt="おにぎり">']},
+  src: {name:'{画像|がぞう}の{場所|ばしょ}', desc:'<img> で表示する画像のファイル名（場所）を書く欄です。',
+        ex:['<img src="ねこ.svg" alt="ねこ">', '<img src="星.svg" alt="星">', '<img src="おにぎり.svg" alt="おにぎり">']},
+  ul:  {name:'{箇条書|かじょうが}き', desc:'点の付いたリストを作ります。中に <li> を項目の数だけ入れます。',
+        ex:['<ul>\n  <li>おにぎり</li>\n  <li>お茶</li>\n</ul>', '<h2>持ち物</h2>\n<ul>\n  <li>筆記用具</li>\n  <li>ノート</li>\n  <li>水筒</li>\n</ul>', '<ul>\n  <li>月曜：作業</li>\n  <li>火曜：休み</li>\n</ul>']},
+  li:  {name:'{箇条書|かじょうが}きの{項目|こうもく}', desc:'箇条書きの中の1つの項目です。必ず <ul> の中に書きます。',
+        ex:['<ul>\n  <li>りんご</li>\n</ul>', '<ul>\n  <li>りんご</li>\n  <li>みかん</li>\n</ul>', '<ul>\n  <li>9時 集合</li>\n  <li>12時 昼食</li>\n  <li>15時 解散</li>\n</ul>']},
+  a:   {name:'リンク', desc:'クリックすると別のページへ移動する文字を作ります。href に行き先（URL）を書きます。',
+        ex:['<a href="https://example.com">好きなサイト</a>', '<p>詳しくは<a href="https://example.com">こちら</a>をご覧ください。</p>', '<ul>\n  <li><a href="https://example.com">トップページ</a></li>\n  <li><a href="https://example.com">お問い合わせ</a></li>\n</ul>']},
+  href:{name:'リンクの{行|い}き{先|さき}', desc:'<a> のリンク先（URL）を書く欄です。',
+        ex:['<a href="https://example.com">サンプル</a>', '<a href="https://example.com/news">お知らせ一覧</a>', '<p><a href="https://example.com">会社のページ</a>へ</p>']},
+  strong:{name:'{太字|ふとじ}（{強調|きょうちょう}）', desc:'大事な言葉を太字にして強調します。文章の一部だけにも使えます。',
+        ex:['<p><strong>よろしくお願いします！</strong></p>', '<p>集合は<strong>9時</strong>です。</p>', '<p><strong>注意：</strong>火気厳禁です。</p>']},
+  hr:  {name:'{区切|くぎ}り{線|せん}', desc:'横線を引いて、内容の区切りを示します。閉じタグはありません。',
+        ex:['<p>前半の話</p>\n<hr>\n<p>後半の話</p>', '<h1>私のページ</h1>\n<hr>', '<p>以上です。</p>\n<hr>\n<p>連絡先：受付まで</p>']},
+  header:{name:'ページの{上部|じょうぶ}（ヘッダー）', desc:'ページの一番上の部分をまとめる箱です。ページの題名やメニューを入れます。画面には何も表示されません（中身だけが表示されます）。',
+        ex:['<header>\n  <h1>私のページ</h1>\n</header>', '<header>\n  <h1>さくら作業所</h1>\n  <p>毎日の活動を紹介します</p>\n</header>', '<header>\n  <h1>お知らせ</h1>\n</header>\n<main>\n  <p>本日は休業です。</p>\n</main>']},
+  main:  {name:'ページの{主|おも}な{内容|ないよう}', desc:'ページの中心となる内容をまとめる箱です。1ページに1つが基本です。画面には何も表示されません（中身だけが表示されます）。',
+        ex:['<main>\n  <p>はじめまして。</p>\n</main>', '<main>\n  <h2>好きなもの</h2>\n  <ul>\n    <li>散歩</li>\n    <li>音楽</li>\n  </ul>\n</main>', '<header>\n  <h1>私のページ</h1>\n</header>\n<main>\n  <h2>自己紹介</h2>\n  <p>よろしくお願いします。</p>\n</main>']},
+  footer:{name:'ページの{下部|かぶ}（フッター）', desc:'ページの一番下の部分をまとめる箱です。連絡先やお知らせなどを入れます。画面には何も表示されません（中身だけが表示されます）。',
+        ex:['<footer>\n  <p>連絡先：受付まで</p>\n</footer>', '<main>\n  <p>本文です。</p>\n</main>\n<footer>\n  <p>2026年 私のページ</p>\n</footer>', '<footer>\n  <a href="https://example.com">トップへ戻る</a>\n</footer>']}
+};
+// タグ名の由来（英語のどの文字から来ているか）。<b> は名前になっている文字
+const ORIG = {
+  h1:    '<b>h</b>eading（ヘディング＝見出し）の h と、大きさの順位 <b>1</b>（1 が一番大きく、6 まであります）',
+  h2:    '<b>h</b>eading（ヘディング＝見出し）の h と、大きさの順位 <b>2</b>（h1 の次に大きい見出し）',
+  p:     '<b>p</b>aragraph（パラグラフ＝段落）の頭文字',
+  img:   '<b>im</b>a<b>g</b>e（イメージ＝画像）を縮めたもの。alt は <b>alt</b>ernative（オルタナティブ＝代わり）の略で、画像が出ないときの代わりの説明です',
+  src:   '<b>s</b>ou<b>rc</b>e（ソース＝元・出どころ）を縮めたもの。画像の「元」になるファイルを指定します',
+  ul:    '<b>u</b>nordered <b>l</b>ist（アンオーダード・リスト＝順番のないリスト）の頭文字',
+  li:    '<b>l</b>ist <b>i</b>tem（リスト・アイテム＝リストの項目）の頭文字',
+  a:     '<b>a</b>nchor（アンカー＝船のいかり）の頭文字。ページとページを「つなぎ止める」イメージです',
+  href:  '<b>h</b>ypertext <b>ref</b>erence（ハイパーテキスト・リファレンス＝リンク先の参照）の略',
+  strong:'<b>strong</b>（ストロング＝強い）そのままの英単語。強く伝えたい部分に使います',
+  hr:    '<b>h</b>orizontal <b>r</b>ule（ホリゾンタル・ルール＝水平の線）の頭文字',
+  header:'<b>header</b>（ヘッダー＝頭の部分）そのままの英単語。head（頭）から来ています',
+  main:  '<b>main</b>（メイン＝主な・中心の）そのままの英単語',
+  footer:'<b>footer</b>（フッター＝足もとの部分）そのままの英単語。foot（足）から来ています'
+};
+Object.keys(ORIG).forEach(k => { TAGINFO[k].orig = ORIG[k]; });
+// 使用例のコードに色を付ける（固定の例だけに使う）
+function hlCode(code){
+  return esc(code).replace(/&lt;(\/?)(\w+)(.*?)&gt;/g, (m, sl, name, attrs) => {
+    const cls = sl ? 'tc' : 'tg';
+    const a = attrs.replace(/(\w+)=&quot;(.*?)&quot;/g, '<span class="an">$1</span>=<span class="av">&quot;$2&quot;</span>');
+    return '<span class="' + cls + '">&lt;' + sl + name + '</span>' + a + '<span class="' + cls + '">&gt;</span>';
+  });
+}
+// 使用例を画面に出すときは、画像のファイル名だけアプリ内の絵に差し替える
+const exPreview = code => code.replace(/src="([^"]+)\.svg"/g, (m, n) => { const p = PICS.find(x => x.name === n); return 'src="' + (p ? picURI(p.id) : '') + '"'; });
+
+let uid = 0;
+function newBlock(type, v){
+  const b = Object.assign({id:'b' + (++uid), type:type}, TYPES[type].def());
+  if (v !== undefined){
+    if (isBox(type)) b.kids = mk(v);
+    else if (type === 'ul') b.items = v.slice();
+    else if (type === 'img') b.pic = v;
+    else if (type === 'a'){ b.text = v[0]; b.href = v[1]; }
+    else b.text = v;
+  }
+  return b;
+}
+const mk = list => (list || []).map(x => newBlock(x[0], x[1]));
+// 箱の中も含めて、上から順（コードの順）に全部のブロックを並べる
+const flat = blocks => [].concat.apply([], blocks.map(b => [b].concat(b.kids ? flat(b.kids) : [])));
+// id のブロックが入っている配列と位置（p は入っている箱の id。一番外側なら null）
+function findLoc(id, blocks, p){
+  blocks = blocks || S.blocks;
+  for (let i = 0; i < blocks.length; i++){
+    const b = blocks[i];
+    if (b.id === id) return {arr:blocks, i:i, b:b, p:p || null};
+    if (b.kids){ const r = findLoc(id, b.kids, b.id); if (r) return r; }
+  }
+  return null;
+}
+const findBlock = id => { const l = findLoc(id); return l && l.b; };
+const kidsOf = p => p ? findBlock(p).kids : S.blocks;
+// 置ける場所の一覧（コードの順）。箱は一番外側だけ、ほかのブロックは箱の中にも置ける
+function slotsFor(blocks, box){
+  const out = [];
+  blocks.forEach((b, i) => {
+    out.push({p:null, i:i});
+    if (!box && b.kids) for (let k = 0; k <= b.kids.length; k++) out.push({p:b.id, i:k});
+  });
+  out.push({p:null, i:blocks.length});
+  return out;
+}
+// ▲▼で1つ上・下の場所へ。箱の端では箱の外へ出る／隣の箱に入る
+function stepPos(id, dir){
+  const l = findLoc(id); if (!l) return null;
+  const rest = S.blocks.filter(b => b.id !== id).map(b => b.kids ? Object.assign({}, b, {kids:b.kids.filter(k => k.id !== id)}) : b);
+  const sl = slotsFor(rest, !!l.b.kids);
+  const k = sl.findIndex(s => s.p === l.p && s.i === l.i);
+  return sl[k + dir] || null;
+}
+// 構造を文字にする（例：header(h1),main(p,ul)）。答え合わせに使う
+const sig = blocks => blocks.map(b => b.type + (b.kids ? '(' + sig(b.kids) + ')' : '')).join(',');
+function isEmpty(b){
+  if (b.kids) return false;
+  if (b.type === 'ul') return b.items.some(t => !t.trim());
+  if (b.type === 'a') return !b.text.trim() || !b.href.trim();
+  if ('text' in b) return !b.text.trim();
+  return false;
+}
+
+/* ===================== 問題 ===================== */
+const INTRO2 = [['h1','私のページ'],['p','はじめまして。']];
+const STAGES = [
+  {id:'1', k:'p', n:'1', icon:'📢', title:'{大|おお}きな{見出|みだ}し', goal:'{大|おお}きな{見出|みだ}しを{配置|はいち}しましょう', robot:'「＋{追加|ついか}」をクリックするとブロックが{並|なら}びます', tray:['h1'], newT:['h1'], box:true, need:['h1'], sample:[['h1','私のページ']]},
+  {id:'2', k:'p', n:'2', icon:'📝', title:'{文章|ぶんしょう}', goal:'{文章|ぶんしょう}を{配置|はいち}しましょう', robot:'{黄色|きいろ}の{欄|らん}の{文字|もじ}は{自由|じゆう}に{書|か}き{換|か}えられます', tray:['p'], newT:['p'], need:['p'], sample:[['p','はじめまして。']]},
+  {id:'3', k:'p', n:'3', icon:'🔢', title:'{並|なら}び{順|じゅん}', goal:'{見出|みだ}しが{一番上|いちばんうえ}になるように{並|なら}べ{替|か}えましょう', robot:'▲▼ボタンかドラッグで{順番|じゅんばん}を{変|か}えられます', tray:['h1','p'], start:[['p','はじめまして。'],['h1','私のページ']], orderFig:true, target:['h1','p'], sample:INTRO2},
+  {id:'4', k:'p', n:'4', icon:'📚', title:'{小|ちい}さな{見出|みだ}し', goal:'{小|ちい}さな{見出|みだ}しで{話題|わだい}を2つに{分|わ}けましょう', robot:'{見本|みほん}の{並|なら}びをよく{見|み}てください', tray:['h1','p','h2'], newT:['h2'], target:['h1','p','h2','p'], sample:[['h1','私のページ'],['p','はじめまして。'],['h2','好きな食べ物'],['p','おにぎりが好きです。']]},
+  {id:'5', k:'p', n:'5', icon:'🖼️', title:'{画像|がぞう}', goal:'{画像|がぞう}を{配置|はいち}しましょう', robot:'{好|す}きな{絵|え}を{選|えら}んでください', tray:['h1','p','img'], start:INTRO2, newT:['img'], need:['img'], sample:INTRO2.concat([['img','cat']])},
+  {id:'6', k:'p', n:'6', icon:'📋', title:'{箇条書|かじょうが}き', goal:'{好|す}きなものを{箇条書|かじょうが}きで3つ{並|なら}べましょう', robot:'&lt;ul&gt; の{中|なか}に &lt;li&gt; が3つ{入|はい}ります', tray:['h1','p','h2','ul'], start:INTRO2, newT:['ul'], need:['ul'], sample:INTRO2.concat([['h2','好きなもの'],['ul',['おにぎり','ねこ','音楽']]])},
+  {id:'7', k:'p', n:'7', icon:'🔗', title:'リンク', goal:'リンクを{配置|はいち}しましょう', robot:'{行|い}き{先|さき}（URL）も{入力|にゅうりょく}できます', tray:['h1','p','a'], start:INTRO2, newT:['a'], need:['a'], sample:INTRO2.concat([['a',['好きなサイト','https://example.com']]])},
+  {id:'8', k:'p', n:'8', icon:'💪', title:'{太字|ふとじ}と{区切|くぎ}り{線|せん}', goal:'{太字|ふとじ}と{区切|くぎ}り{線|せん}を{使|つか}いましょう', robot:'{強調|きょうちょう}したい{文|ぶん}を{太字|ふとじ}にします', tray:['h1','p','strong','hr'], start:INTRO2, newT:['strong','hr'], need:['strong','hr'], sample:[['h1','私のページ'],['strong','よろしくお願いします！'],['hr'],['p','はじめまして。']]},
+  {id:'9', k:'p', n:'9', icon:'🧩', title:'{組|く}み{立|た}て', goal:'{見本|みほん}と{同|おな}じ{並|なら}びにしましょう', robot:'{見本|みほん}と{見比|みくら}べながら{作|つく}りましょう', tray:ALL, cmp:true, target:'sample', sample:[['h1','私のページ'],['img','flower'],['p','はじめまして。'],['h2','好きなもの'],['ul',['おにぎり','花','音楽']],['a',['好きなサイト','https://example.com']]]},
+  {id:'10',k:'p', n:'10',icon:'🌟', title:'{自己紹介|じこしょうかい}ページ', goal:'{自分|じぶん}の{自己紹介|じこしょうかい}ページを{自由|じゆう}に{作|つく}りましょう', robot:'4{種類|しゅるい}{以上|いじょう}の{部品|ぶひん}を{使|つか}ってください', tray:ALL, free:4, sample:[['h1','○○のページ'],['img','star'],['p','こんにちは。'],['h2','好きなこと'],['ul',['散歩','映画','料理']],['hr'],['strong','よろしくお願いします！']]},
+  // 箱ブロック編：ページを「上部・主な内容・下部」の箱に分ける（tree：箱の中身まで含めて答え合わせ）
+  {id:'11',k:'p', n:'11',icon:'📦', title:'ページの{骨組|ほねぐ}み', goal:'3つの{箱|はこ}を{上|うえ}から{順|じゅん}に{並|なら}べましょう', robot:'{右|みぎ}の「デザインを{付|つ}ける」で、{箱|はこ}ごとに{見|み}た{目|め}が{変|か}わります。「{箱|はこ}を{表示|ひょうじ}」で{箱|はこ}の{形|かたち}も{確認|かくにん}できます', tray:BOXES, newT:BOXES, boxFig:true, tree:true,
+    why:'ページは「{上部|じょうぶ}・{主|おも}な{内容|ないよう}・{下部|かぶ}」の3つに{分|わ}けて{作|つく}るのが{基本|きほん}です。デザイン（CSS）も{箱|はこ}ごとに{付|つ}けられます。なぜ{分|わ}けるのかは、{次|つぎ}の{練習|れんしゅう}で{確|たし}かめます。', sample:[['header',[]],['main',[]],['footer',[]]]},
+  // 複数ページのサイト：ヘッダーとフッターはどのページも同じ（共通の部分）、main だけがページごとに変わる
+  {id:'site',k:'p', n:'12',icon:'📑', title:'{共通|きょうつう}の{部分|ぶぶん}', goal:'ヘッダーにサイト{名|めい}、フッターに{連絡先|れんらくさき}を{入|い}れて、3つのページを{見比|みくら}べましょう', robot:'{箱|はこ}をクリックして{選|えら}んでから「＋{追加|ついか}」します。{右|みぎ}の{画面|がめん}の{上|うえ}のタブで、3つのページを{切|き}り{替|か}えられます', tray:['h1','p'], pages:true, pagesFig:true, tree:true,
+    start:[['header',[]],['main',[['p','ようこそ。私たちの作業所のページです。']]],['footer',[]]],
+    sample:[['header',[['h1','さくら作業所']]],['main',[['p','ようこそ。私たちの作業所のページです。']]],['footer',[['p','連絡先：受付まで']]]],
+    why:'&lt;header&gt; と &lt;footer&gt; は、どのページにも{出|で}る「{共通|きょうつう}の{部分|ぶぶん}」です。Word の「ヘッダー・フッター」に{書|か}いた{題名|だいめい}やページ{番号|ばんごう}が{全|ぜん}ページに{出|で}るのと{同|おな}じです。{共通|きょうつう}の{部分|ぶぶん}を{分|わ}けておくと、1か{所|しょ}{直|なお}すだけで{全|ぜん}ページが{変|か}わります。ページごとに{変|か}わるのは &lt;main&gt; の{中身|なかみ}だけです。'},
+  {id:'12',k:'p', n:'13',icon:'🔧', title:'{間違|まちが}いを{直|なお}す', goal:'サイト{名|めい}と{連絡先|れんらくさき}が{逆|ぎゃく}の{箱|はこ}に{入|はい}っています。{見本|みほん}と{同|おな}じになるように{直|なお}しましょう', robot:'ブロックはドラッグか ▲▼ で{別|べつ}の{箱|はこ}へ{移|うつ}せます。{右|みぎ}の{画面|がめん}がどう{変|か}わるか{見|み}てください', tray:['h1','p'], wrongFig:true, tree:true,
+    start:[['header',[['p','連絡先：受付まで']]],['main',[['p','はじめまして。']]],['footer',[['h1','私のページ']]]],
+    sample:[['header',[['h1','私のページ']]],['main',[['p','はじめまして。']]],['footer',[['p','連絡先：受付まで']]]],
+    why:'{見|み}る{人|ひと}は「サイト{名|めい}やメニューは{一番上|いちばんうえ}、{連絡先|れんらくさき}は{一番下|いちばんした}」と{思|おも}って{探|さが}します。{逆|ぎゃく}にすると、どこに{何|なに}があるか{分|わ}からず{迷|まよ}ってしまいます（{新聞|しんぶん}の{題字|だいじ}が{一番下|いちばんした}にあったら{読|よ}みにくいのと{同|おな}じです）。また{読|よ}み{上|あ}げソフトでは、&lt;header&gt; を「いつも{同|おな}じ{部分|ぶぶん}」として{飛|と}ばし、&lt;main&gt; から{読|よ}む{使|つか}い{方|かた}もあります。'},
+  {id:'13',k:'p', n:'14',icon:'📥', title:'{箱|はこ}に{入|い}れる', goal:'{見本|みほん}と{同|おな}じように、{箱|はこ}の{中|なか}にブロックを{入|い}れましょう', robot:'{箱|はこ}をクリックして{選|えら}んでから「＋{追加|ついか}」すると、その{箱|はこ}の{中|なか}に{入|はい}ります（ドラッグでも{入|い}れられます）', tray:['h1','h2','p'], start:[['header',[]],['main',[]],['footer',[]]], tree:true, sample:[['header',[['h1','私のページ']]],['main',[['p','はじめまして。']]],['footer',[['p','連絡先：受付まで']]]],
+    why:'{同|おな}じ &lt;p&gt; でも、&lt;main&gt; に{入|い}れると{本文|ほんぶん}、&lt;footer&gt; に{入|い}れるとページの{下|した}の{小|ちい}さな{文字|もじ}になります。{何|なに}を{伝|つた}えたい{部分|ぶぶん}かで、{入|い}れる{箱|はこ}を{選|えら}びます。'},
+  {id:'14',k:'p', n:'15',icon:'🏗️', title:'{箱|はこ}で{組|く}み{立|た}て', goal:'{箱|はこ}を{使|つか}って、{見本|みほん}と{同|おな}じページを{作|つく}りましょう', robot:'まず{箱|はこ}を{並|なら}べて、それから{中身|なかみ}を{入|い}れると{作|つく}りやすいです', tray:BOXES.concat(['h1','h2','p','img','ul']), cmp:true, tree:true, sample:[['header',[['h1','私のページ']]],['main',[['h2','自己紹介'],['p','はじめまして。'],['h2','好きなもの'],['ul',['散歩','音楽','料理']]]],['footer',[['p','連絡先：受付まで']]]],
+    why:'{箱|はこ}で{分|わ}けておくと、デザインで{見|み}た{目|め}を{整|ととの}えやすくなるだけでなく、{読|よ}み{上|あ}げソフトや{検索|けんさく}サイトも「&lt;main&gt; が{大事|だいじ}な{内容|ないよう}」と{分|わ}かります。Progate の CSS では、この{箱|はこ}ごとに{見|み}た{目|め}を{決|き}めていきます。'},
+  {id:'A', k:'c', n:'A', icon:'✅', title:'{見本|みほん}の{再現|さいげん}', goal:'{見本|みほん}と{同|おな}じページを{作|つく}りましょう', robot:'{見本|みほん}と{見比|みくら}べて{確認|かくにん}しましょう', tray:ALL, cmp:true, target:'sample', sample:[['h1','動物図鑑'],['img','cat'],['p','ねこはかわいい。'],['h2','好きなところ'],['p','ふわふわしています。']]},
+  {id:'B', k:'c', n:'B', icon:'🏆', title:'{応用|おうよう}', goal:'{見本|みほん}と{同|おな}じページを{作|つく}りましょう', robot:'{見本|みほん}と{見比|みくら}べて{確認|かくにん}しましょう', tray:ALL, cmp:true, target:'sample', sample:[['h1','私の1日'],['img','onigiri'],['p','朝はおにぎりです。'],['hr'],['h2','好きなこと'],['ul',['散歩','読書','お絵かき']],['strong','毎日楽しいです！']]},
+  // タイピング編：[[答え]] が入力欄になる。line は1行まるごと入力（re で判定、文字の部分は自由）
+  {id:'T1', k:'t', n:'1', icon:'⌨️', title:'「/」とタグ{名|めい}', goal:'{空欄|くうらん}に「/」とタグの{名前|なまえ}を{入力|にゅうりょく}しましょう', robot:'{終了|しゅうりょう}タグは「/」＋{開始|かいし}タグと{同|おな}じ{名前|なまえ}です', items:[
+    {t:'<h1>私のページ<[[/h1]]>'}, {t:'<p>はじめまして。<[[/p]]>'}, {t:'<h2>好きなもの<[[/h2]]>'}, {t:'<ul>\n  <li>りんご<[[/li]]>\n</ul>'}]},
+  {id:'T2', k:'t', n:'2', icon:'⌨️', title:'{終了|しゅうりょう}タグ', goal:'{終了|しゅうりょう}タグを{記号|きごう}も{含|ふく}めて{入力|にゅうりょく}しましょう', robot:'{終了|しゅうりょう}タグは &lt;/ で{始|はじ}まります', items:[
+    {t:'<h1>私のページ[[</h1>]]'}, {t:'<p>今日は晴れです。[[</p>]]'}, {t:'<ul>\n  <li>おにぎり[[</li>]]\n</ul>'}, {t:'<p><strong>大事なお知らせ</strong>[[</p>]]'}]},
+  {id:'T3', k:'t', n:'3', icon:'⌨️', title:'{開始|かいし}と{終了|しゅうりょう}', goal:'{開始|かいし}タグと{終了|しゅうりょう}タグの{両方|りょうほう}を{入力|にゅうりょく}しましょう', robot:'{同|おな}じ{名前|なまえ}のタグで{文字|もじ}を{挟|はさ}みます', items:[
+    {t:'[[<h1>]]自己紹介[[</h1>]]'}, {t:'[[<p>]]はじめまして。[[</p>]]'}, {t:'[[<h2>]]趣味[[</h2>]]'}, {t:'<a [[href]]="https://example.com">好きなサイト</a>'}]},
+  {id:'T4', k:'t', n:'4', icon:'⌨️', title:'1{行|ぎょう}まるごと', goal:'{説明|せつめい}どおりの1{行|ぎょう}を{自分|じぶん}で{入力|にゅうりょく}しましょう', robot:'タグの{間|あいだ}の{文字|もじ}は{自由|じゆう}です', items:[
+    {line:'<h1>私のページ</h1>', re:/^<h1>[^<>]+<\/h1>$/i, say:'{大|おお}きな{見出|みだ}し（&lt;h1&gt;）を1つ{作|つく}りましょう'},
+    {line:'<p>はじめまして。</p>', re:/^<p>[^<>]+<\/p>$/i, say:'{文章|ぶんしょう}（&lt;p&gt;）を1つ{作|つく}りましょう'},
+    {line:'<hr>', re:/^<hr\s*\/?>$/i, say:'{区切|くぎ}り{線|せん}（&lt;hr&gt;）を{入|い}れましょう'},
+    {line:'<img src="ねこ.svg" alt="ねこ">', re:/^<img\s+src="[^"<>]+"\s+alt="[^"<>]*"\s*\/?>$/i, say:'ねこの{画像|がぞう}を{表示|ひょうじ}しましょう（src は "ねこ.svg"、alt は "ねこ"）'}]}
+];
+// 「共通の部分」の練習で見せる3つのページ。main 以外（ヘッダー・フッター）は自分で作ったものがどのページにも出る
+const PAGES = [
+  {name:'トップ', file:'index.html'},
+  {name:'自己紹介', file:'about.html', main:[['h2','自己紹介'],['p','パンやお菓子を作っています。']]},
+  {name:'お問い合わせ', file:'contact.html', main:[['h2','お問い合わせ'],['p','見学はいつでも受け付けています。']]}
+];
+// 今見ているページのブロック（トップは自分で並べたもの。ほかのページは main の中身だけ差し替える）
+function viewBlocks(){
+  const pg = PAGES[S.page];
+  if (!cur().pages || !pg.main) return S.blocks;
+  if (!pg.blocks) pg.blocks = mk(pg.main);
+  return S.blocks.map(b => b.type === 'main' ? Object.assign({}, b, {kids:pg.blocks}) : b);
+}
+const cardLabel = st => ({p:'練習 ', c:'確認 ', t:'タイピング '})[st.k] + st.n;
+const targetOf = st => st.target === 'sample' ? st.sample.map(x => x[0]) : st.target;
+const isUnlocked = i => STAGES[i].k === 'p' || !!prog.cleared['10'];
+
+/* ===================== 状態 ===================== */
+// into：「＋追加」したブロックが入る箱の id（null なら一番外側の最後）
+const S = {screen:'select', idx:0, blocks:[], undo:[], fails:0, hl:null, flashId:null, editSnap:false, strip:'', into:null, boxes:false};
+const cur = () => STAGES[S.idx];
+
+/* ===================== HTML を作る ===================== */
+// プレビュー用の本物のHTML（画像だけ中身に差し替える）
+function pvHTML(blocks, withIds){
+  return blocks.map((b, i) => {
+    // data-t はタグ名（「箱を表示」で枠と名前を出すのに使う）
+    const t0 = b.type === 'strong' ? 'p' : b.type;
+    const d = ' data-t="' + t0 + '"' + (withIds ? ' data-id="' + b.id + '" style="--c:' + COL[b.type][1] + '"' : '');
+    switch (b.type){
+      case 'h1': case 'h2': case 'p': return '<' + b.type + d + '>' + esc(b.text) + '</' + b.type + '>';
+      case 'strong': return '<p' + d + '><strong data-t="strong">' + esc(b.text) + '</strong></p>';
+      case 'hr': return '<hr' + d + '>';
+      case 'img': return '<img' + d + ' src="' + picURI(b.pic) + '" alt="' + esc(picById(b.pic).name) + '">';
+      case 'a': return '<a' + d + ' href="' + esc(b.href) + '" draggable="false">' + esc(b.text) + '</a>';
+      case 'ul': return '<ul' + d + '>' + b.items.map(t => '<li data-t="li">' + esc(t) + '</li>').join('') + '</ul>';
+      case 'header': case 'main': case 'footer': return '<' + b.type + d + '>' + pvHTML(b.kids, withIds) + '</' + b.type + '>';
+    }
+    return '';
+  }).join('\n');
+}
+// bar はブラウザ上部の帯に置くもの（右の画面の「箱を表示」など）。箱の表示がオンなら枠とタグ名を出す
+// デザイン（実際のサイトのような見た目）は、箱を使う練習のときだけ付ける
+const useDesign = () => prog.design && S.screen === 'stage' && !!cur().tree;
+function browserHTML(inner, id, bar){
+  return '<div class="browser"><div class="bbar"><i></i><i></i><i></i>' + (bar || '') + '</div><div class="pv' + (S.boxes ? ' boxes' : '') + (useDesign() ? ' design' : '') + '"' + (id ? ' id="' + id + '"' : '') + '>' + inner + '</div></div>';
+}
+/* ブロックの顔はコードそのもの。slot(欄の名前) が入力欄（パレットでは黄色の空欄）を返す。
+   data-tag を付けた部分にマウスを合わせると説明、クリックすると使用例が出る */
+const BO = t => '<span class="ct" data-tag="' + t + '">&lt;' + t + '&gt;</span>';
+const BC = t => '<span class="ct cl" data-tag="' + t + '">&lt;/' + t + '&gt;</span>';
+const BT = (s, t) => '<span class="ct" data-tag="' + t + '">' + s + '</span>';
+const BA = (s, t) => '<span class="ct an" data-tag="' + t + '">' + s + '</span>';
+const shortTag = t => '&lt;' + t + '&gt;';
+function face(type, slot){
+  switch (type){
+    case 'h1': case 'h2': case 'p': return BO(type) + slot('text') + BC(type);
+    case 'strong': return BO('p') + BO('strong') + slot('text') + BC('strong') + BC('p');
+    case 'hr': return BO('hr');
+    case 'img': return BT('&lt;img', 'img') + BA('&nbsp;src="', 'src') + slot('pic') + BA('"', 'src') + BT('&gt;', 'img');
+    case 'a': return BT('&lt;a', 'a') + BA('&nbsp;href="', 'href') + slot('href') + BA('"', 'href') + BT('&gt;', 'a') + slot('text') + BC('a');
+    case 'ul': return BO('ul') + slot('items') + BC('ul');
+    case 'header': case 'main': case 'footer': return BO(type) + slot('kids') + BC(type);
+  }
+  return '';
+}
+function chipHTML(type, opts){
+  opts = opts || {};
+  const tag = opts.stat ? 'div' : 'button';
+  const fake = f => f === 'pic' ? '<span class="fakepill pic1"><img src="' + picURI('cat') + '" alt=""></span>' :
+    f === 'kids' ? '<span class="fakebox" aria-hidden="true">…</span>' : '<span class="fakepill" aria-hidden="true"></span>';
+  return '<' + tag + ' class="chip' + (opts.stat ? ' static' : '') + '" data-type="' + type + '" style="' + colVars(type) + '" aria-label="' + esc(plain(TYPES[type].label)) + '">' +
+    '<span class="chipcode">' + face(type, fake) + '</span><span class="jrow"><span class="jcap">' + fu(TYPES[type].label) + '</span>' +
+    (opts.stat ? '' : '<span class="addbtn">＋' + fu('{追加|ついか}') + '</span>') + '</span></' + tag + '>';
+}
+const ROBOT = '<svg class="robot" viewBox="0 0 64 64" aria-hidden="true"><line x1="32" y1="5" x2="32" y2="13" stroke="#7a8ca0" stroke-width="3"/><circle cx="32" cy="5" r="4" fill="#f0a24a"/><rect x="7" y="13" width="50" height="42" rx="21" fill="#cfe3f2" stroke="#7a8ca0" stroke-width="3"/><circle cx="24" cy="31" r="5" fill="#2b2f33"/><circle cx="40" cy="31" r="5" fill="#2b2f33"/><circle cx="25.5" cy="29.5" r="1.6" fill="#fff"/><circle cx="41.5" cy="29.5" r="1.6" fill="#fff"/><path d="M24 41 Q32 47 40 41" stroke="#2b2f33" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="15" cy="39" r="3.5" fill="#f6b3b3"/><circle cx="49" cy="39" r="3.5" fill="#f6b3b3"/></svg>';
+
+// 左の列（お題・見本・ヒント）。middle は見本など、tail はヒントの下に付けるもの
+function infoHTML(st, middle, tail){
+  return '<section class="pane info" aria-label="お題">' +
+    '<h2 class="ph"><span class="phico" aria-hidden="true">🎯</span><span>' + fu('お{題|だい}') + '</span></h2>' +
+    '<div class="gtext">' + fu(st.goal) + '</div>' + middle +
+    '<div class="ilabel">' + fu('ヒント') + '</div>' +
+    '<div class="robotRow">' + ROBOT + '<div class="bubble" id="bubble"></div></div>' + tail +
+  '</section>';
+}
+
+/* ===================== ステージ選択 ===================== */
+function nextIdx(){
+  for (let i = 0; i < STAGES.length; i++) if (isUnlocked(i) && !prog.cleared[STAGES[i].id]) return i;
+  return -1;
+}
+function renderSelect(){
+  S.screen = 'select';
+  hideTip();
+  $('#backBtn').hidden = true;
+  $('#topTitle').innerHTML = 'HTML ブロック練習';
+  const nx = nextIdx();
+  let h = '<div class="sel"><h1 class="selh">' + fu('ステージを{選択|せんたく}してください') + '</h1><div class="cards">';
+  STAGES.forEach((st, i) => {
+    if (st.id === 'A' || st.id === 'T1') h += '<div class="sep" aria-hidden="true"></div>';
+    const done = !!prog.cleared[st.id], open = isUnlocked(i);
+    const cls = ['card', done ? 'done' : '', i === nx ? 'next' : '', st.k !== 'p' ? 'conf' : ''].join(' ');
+    h += '<button class="' + cls + '" data-i="' + i + '"' + (open ? '' : ' disabled aria-label="' + cardLabel(st) + '（練習10をクリアすると開放）"') + '>' +
+      (i === nx ? '<span class="nexttag">' + fu('{次|つぎ}はここ') + '</span>' : '') +
+      '<span class="cico" aria-hidden="true">' + (open ? st.icon : '🔒') + '</span>' +
+      '<span class="cnum">' + cardLabel(st) + '</span>' +
+      '<span class="ctit">' + fu(st.title) + '</span>' +
+      '<span class="cstar" aria-label="' + (done ? 'クリア済み' : '未クリア') + '">' + (done ? '★' : '☆') + '</span></button>';
+  });
+  h += '</div></div>';
+  $('#app').innerHTML = h;
+  $$('#app .card').forEach(c => c.addEventListener('click', () => openStage(+c.dataset.i)));
+  window.scrollTo(0, 0);
+}
+
+/* ===================== 問題画面 ===================== */
+function openStage(i){
+  if (STAGES[i].k === 't') return openTypeStage(i);
+  S.idx = i; S.screen = 'stage';
+  hideTip();
+  const st = cur();
+  S.blocks = mk(st.start); S.undo = []; S.fails = 0; S.hl = null; S.strip = ''; S.into = null;
+  S.boxes = false;   // 「箱を表示」は、ステージを開くたびにオフから始める
+  S.page = 0; S.seen = [0];   // 共通の部分の練習：見ているページと、見たページ
+  $('#backBtn').hidden = false;
+  $('#topTitle').innerHTML = cardLabel(st) + ' <span aria-hidden="true">' + st.icon + '</span> ' + fu(st.title);
+  // 縦3列：左＝お題（お題・見本・ヒント）／真ん中＝ブロック／右＝画面
+  $('#app').innerHTML =
+  '<div class="stage">' +
+    '<div class="main3">' +
+      infoHTML(st,
+        '<div class="ilabel">' + fu('{見本|みほん}') + '<button class="linkbtn" id="thumbBtn">🔍 ' + fu('{拡大|かくだい}') + '</button></div>' +
+        '<div id="sampleBox">' + browserHTML('<div class="sfit">' + pvHTML(mk(st.sample)) + '</div>') + '</div>' +
+        (st.cmp ? '<button class="bigsub cmpBtn" id="cmpBtn">👀 ' + fu('{見本|みほん}と{自分|じぶん}の{画面|がめん}を{比較|ひかく}') + '</button>' : ''),
+        (st.free ? '<div class="kinds" id="kinds"></div>' : '') + '<div id="strip"></div>') +
+      // 確認A・Bでは部品の日本語の意味を隠し、チェックボックスで表示できるようにする
+      '<section class="pane left' + (st.k === 'c' ? ' hidejcap' : '') + '" aria-label="ブロック">' +
+        '<h2 class="ph"><span class="phico" aria-hidden="true">&lt;/&gt;</span>ブロック' +
+          (st.k === 'c' ? '<label class="jtoggle"><input type="checkbox" id="jcapChk"><span>' + fu('{各|かく}コードの{意味|いみ}の{表示|ひょうじ}') + '</span></label>' : '') + '</h2>' +
+        '<div class="lgrid"><div class="trayWrap"><div class="tlabel"><span aria-hidden="true">👆</span>' + fu('＋{追加|ついか}をクリック、またはドラッグ') + (st.tree ? '<span class="intoTag" id="intoTag"></span>' : '') + '</div><div class="tray" id="tray">' + st.tray.map(t => chipHTML(t)).join('') + '</div></div>' +
+        '<div class="flowdown" aria-hidden="true">▼</div>' +
+        '<div class="work" id="work"></div></div>' +
+        '<div class="wbtns"><button class="sbtn" id="undoBtn">↶ ' + fu('{元|もと}に{戻|もど}す') + '</button><button class="sbtn" id="clearBtn">🗑 ' + fu('すべて{削除|さくじょ}') + '</button><button class="sbtn" id="saveBtn">💾 ' + fu('ページを{保存|ほぞん}') + '</button></div>' +
+        '<div class="actions"><button class="donebtn" id="doneBtn">' + fu('{答|こた}え{合|あ}わせ') + '</button>' +
+          (st.k === 'p' ? '<button class="skipbtn" id="skipBtn">' + fu('スキップして{次|つぎ}へ ▶') + '</button>' : '') + '</div>' +
+      '</section>' +
+      // 右：ブラウザでの表示（最初）とコード（エディタ風）を切り替える
+      '<section class="pane right" id="rightPane" aria-label="画面">' +
+        '<h2 class="ph"><span class="phico" aria-hidden="true">🖥</span><span>' + fu('{画面|がめん}') + '</span>' +
+          '<span class="vtabs" role="tablist"><button class="vtab" role="tab" data-view="pv" aria-selected="true">🖥 ブラウザ</button>' +
+          '<button class="vtab" role="tab" data-view="code" aria-selected="false"><span class="ti">&lt;/&gt;</span> コード</button></span></h2>' +
+        (st.pages ? '<div class="pgtabs" role="tablist" aria-label="ページ">' + PAGES.map((p, i) => '<button class="pgtab' + (i === 0 ? ' seen' : '') + '" role="tab" data-pg="' + i + '" aria-selected="' + (i === 0) + '">📄 ' + p.name + '</button>').join('') + '</div>' : '') +
+        '<div id="viewWrap">' + browserHTML('', 'pv',
+          (st.tree ? '<label class="boxtgl"><input type="checkbox" id="designChk"' + (prog.design ? ' checked' : '') + '><span>' + fu('デザインを{付|つ}ける') + '</span></label>' : '') +
+          '<label class="boxtgl"><input type="checkbox" id="boxChk"' + (S.boxes ? ' checked' : '') + '><span>' + fu('{箱|はこ}を{表示|ひょうじ}') + '</span></label>') +
+          '<div class="editor" hidden><div class="ebar"><span class="etab" id="etab">index.html</span></div><div class="ecode" id="codeV"></div></div>' +
+        '</div>' +
+      '</section>' +
+    '</div>' +
+  '</div>';
+  bindStage();
+  setBubble(fu(st.robot));
+  renderAll();
+  window.scrollTo(0, 0);
+  showIntro();
+}
+
+function bindStage(){
+  const st = cur();
+  $('#thumbBtn').addEventListener('click', () => st.cmp ? showCompare() : showSample());
+  if (st.cmp) $('#cmpBtn').addEventListener('click', showCompare);
+  $('#undoBtn').addEventListener('click', undo);
+  $('#clearBtn').addEventListener('click', () => { if (S.blocks.length) change(() => { S.blocks = []; S.into = null; }); });
+  $('#doneBtn').addEventListener('click', judge);
+  $('#saveBtn').addEventListener('click', showSave);
+  $$('.vtab').forEach(t => t.addEventListener('click', () => {
+    const code = t.dataset.view === 'code';
+    $$('.vtab').forEach(x => x.setAttribute('aria-selected', x === t));
+    $('#pv').closest('.browser').hidden = code;
+    $('.editor').hidden = !code;
+    setHL(S.hl);
+  }));
+  if ($('#jcapChk')) $('#jcapChk').addEventListener('change', e => { $('.pane.left').classList.toggle('hidejcap', !e.target.checked); });
+  if ($('#skipBtn')) $('#skipBtn').addEventListener('click', goNext);
+  // 箱を表示：見本と自分の画面の両方に、要素の枠とタグ名を出す
+  $('#boxChk').addEventListener('change', e => {
+    S.boxes = e.target.checked;
+    $$('#app .pv').forEach(v => v.classList.toggle('boxes', S.boxes));
+    fitSample();
+  });
+  // ページの切り替え（共通の部分の練習）：ヘッダー・フッターはそのまま、main だけが変わる
+  $$('.pgtab').forEach(t => t.addEventListener('click', () => {
+    S.page = +t.dataset.pg;
+    if (S.seen.indexOf(S.page) < 0) S.seen.push(S.page);
+    $$('.pgtab').forEach(x => {
+      x.setAttribute('aria-selected', x === t);
+      x.classList.toggle('seen', S.seen.indexOf(+x.dataset.pg) >= 0);
+      x.classList.remove('glow');
+    });
+    renderPreview(); setHL(S.hl);
+  }));
+  // デザインを付ける：箱ごとに見た目が決まる（上部は色の帯、下部は灰色の小さな文字）
+  if ($('#designChk')) $('#designChk').addEventListener('change', e => {
+    prog.design = e.target.checked; saveProg();
+    $$('#app .pv').forEach(v => v.classList.toggle('design', prog.design));
+    fitSample();
+  });
+
+  // トレー：タグをクリック → 使用例。それ以外（＋追加など）をクリック → 追加。ドラッグで好きな場所へ
+  $$('#tray .chip').forEach(ch => {
+    ch.addEventListener('click', e => {
+      if (Date.now() - justDragged < 400) return;
+      const ct = e.target.closest('.ct[data-tag]');
+      if (ct) showTagInfo(ct.dataset.tag); else addBlock(ch.dataset.type);
+    });
+    ch.addEventListener('pointerdown', e => dragStart(e, 'tray', ch.dataset.type, ch));
+  });
+
+  const work = $('#work');
+  work.addEventListener('click', e => {
+    const blk = e.target.closest('.blk');
+    // 箱（またはその中）をクリック → 「＋追加」の入れ先にする。箱の外をクリック → 一番外側に戻す
+    if (cur().tree && !e.target.closest('button, input, .ct') && Date.now() - justDragged > 400){
+      const bx = e.target.closest('.blk.box');
+      setInto(bx ? bx.dataset.id : null);
+    }
+    if (!blk) return;
+    const id = blk.dataset.id;
+    const act = e.target.closest('[data-act]');
+    if (act){
+      const l = findLoc(id);
+      if (act.dataset.act === 'del') change(() => { l.arr.splice(l.i, 1); if (S.into && !findBlock(S.into)) S.into = null; });
+      if (act.dataset.act === 'up' || act.dataset.act === 'down'){
+        const to = stepPos(id, act.dataset.act === 'up' ? -1 : 1);
+        if (to) moveTo(id, to);
+      }
+      return;
+    }
+    const pic = e.target.closest('[data-pic]');
+    if (pic){
+      const b = findBlock(id);
+      if (b.pic !== pic.dataset.pic) change(() => { b.pic = pic.dataset.pic; });
+      return;
+    }
+    // タグをクリック → 使用例
+    const ct = e.target.closest('.ct[data-tag]');
+    if (ct && Date.now() - justDragged > 400) showTagInfo(ct.dataset.tag);
+  });
+  work.addEventListener('focusin', e => {
+    if (!e.target.matches('.inp')) return;
+    S.editSnap = false;
+    if (cur().tree){ const bx = e.target.closest('.blk.box'); setInto(bx ? bx.dataset.id : null); }
+  });
+  work.addEventListener('input', e => {
+    const inp = e.target; if (!inp.matches('.inp')) return;
+    const b = findBlock(inp.closest('.blk').dataset.id); if (!b) return;
+    if (!S.editSnap){ pushUndo(); S.editSnap = true; }
+    if (inp.dataset.f === 'items') b.items[+inp.dataset.k] = inp.value;
+    else b[inp.dataset.f] = inp.value;
+    inp.classList.toggle('empty', !inp.value.trim());
+    clearHints();
+    renderPreview(); renderKinds(); updateUndo();
+    setHL(S.hl);
+  });
+  work.addEventListener('pointerdown', e => {
+    if (e.target.closest('input, button')) return;
+    const h = e.target.closest('.badge, .ct, .brow, .cfoot'); if (!h) return;
+    const blk = h.closest('.blk');
+    dragStart(e, 'blk', blk.dataset.id, blk);
+  });
+}
+
+function renderAll(){
+  renderWork(); renderPreview(); renderKinds(); updateUndo();
+  $('#strip').innerHTML = S.strip;
+  setHL(S.hl);
+  S.flashId = null;
+  fitSample();
+}
+function renderWork(){
+  const w = $('#work');
+  if (S.into && !findBlock(S.into)) S.into = null;   // 元に戻すなどで箱がなくなったとき
+  if (!S.blocks.length){ showInto(); w.innerHTML = '<div class="drophere">⬇ ' + fu('ここにブロックが{並|なら}びます') + '</div>'; return; }
+  const no = {n:0};   // 番号は箱の中も含めて上から順に付ける
+  w.innerHTML = S.blocks.map(b => blkHTML(b, no)).join('');
+  showInto();
+}
+// 「＋追加」の入れ先：選んだ箱を目立たせて、部品一覧の上に入れ先を出す
+function setInto(id){
+  if (id === S.into) return;
+  S.into = id && findBlock(id) ? id : null;
+  showInto();
+}
+function showInto(){
+  $$('#work .blk.box').forEach(el => el.classList.toggle('into', el.dataset.id === S.into));
+  const t = $('#intoTag'); if (!t) return;
+  const b = S.into && findBlock(S.into);
+  t.innerHTML = fu('{追加先|ついかさき}：') + (b ? '<span class="ct">' + shortTag(b.type) + '</span> ' + fu('の{中|なか}') : fu('ページの{一番下|いちばんした}'));
+  t.classList.toggle('on', !!b);
+}
+function inp(field, val, k){
+  return '<input class="inp' + (val.trim() ? '' : ' empty') + '" data-f="' + field + '"' + (k !== undefined ? ' data-k="' + k + '"' : '') + ' value="' + esc(val) + '" aria-label="' + (field === 'href' ? 'リンク先' : '文字') + '" autocomplete="off"' + (field === 'href' ? ' inputmode="url" spellcheck="false"' : '') + '>';
+}
+// no は {n:数} の番号カウンター（数字だけを渡したときはその番号を使う）
+function blkHTML(b, no){
+  if (typeof no === 'number') no = {n:no};
+  const i = no.n++;
+  const slot = f => {
+    if (f === 'text' || f === 'href') return inp(f, b[f]);
+    if (f === 'pic') return '<span class="pics">' + PICS.map(pc => '<button class="pic" data-pic="' + pc.id + '" aria-pressed="' + (b.pic === pc.id) + '"><img src="' + picURI(pc.id) + '" alt=""><span>' + pc.name + '</span></button>').join('') + '</span>';
+    return '';
+  };
+  // 箇条書き：<ul> の中に <li> が3つ、下に </ul>
+  const isUl = b.type === 'ul', box = !!b.kids;
+  const top = isUl || box ? BO(b.type) : face(b.type, slot);
+  let inner = '';
+  if (isUl) inner = '<div class="cmouth">' + b.items.map((t, k) => '<div class="liblk">' + BO('li') + inp('items', t, k) + BC('li') + '</div>').join('') + '</div><div class="cfoot">' + BC('ul') + '</div>';
+  // 箱：開始タグと終了タグの間（口）に、ほかのブロックがそのまま入る
+  if (box) inner = '<div class="kids" data-p="' + b.id + '">' + (b.kids.length ? b.kids.map(k => blkHTML(k, no)).join('') : '<div class="kidsempty">' + fu('ここにブロックが{入|はい}ります') + '</div>') + '</div><div class="cfoot">' + BC(b.type) + '</div>';
+  const inS = !!findLoc(b.id);   // 並べる場所のブロックか（使い方の説明の絵ではない）
+  const upOk = inS && !!stepPos(b.id, -1), downOk = inS && !!stepPos(b.id, 1);
+  return '<div class="blk' + (box ? ' box' : '') + '" data-id="' + b.id + '" style="' + colVars(b.type) + '">' +
+    '<div class="brow"><span class="badge">' + (i + 1) + '</span>' + top +
+    '<span class="ctrl"><button class="cb" data-act="up" aria-label="上へ"' + (upOk ? '' : ' disabled') + '>▲</button>' +
+    '<button class="cb" data-act="down" aria-label="下へ"' + (downOk ? '' : ' disabled') + '>▼</button>' +
+    '<button class="cb del" data-act="del" aria-label="削除">×</button></span></div>' + inner + '</div>';
+}
+function renderPreview(){
+  const pv = $('#pv');
+  const V = viewBlocks();
+  pv.innerHTML = V.length ? pvHTML(V, true) : '<div class="pvempty">' + fu('（まだ{何|なに}もありません）') + '</div>';
+  if (S.flashId){ const f = $('[data-id="' + S.flashId + '"]', pv); if (f) f.classList.add('flash'); }
+  renderCodeV();
+}
+const unesc = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+// 右の「コード」：本物のエディタのように、行番号付きでファイル全体を表示。ブロックごとの行に data-id を付けて連動させる
+function renderCodeV(){
+  const el = $('#codeV'); if (!el) return;
+  const V = viewBlocks(), L = pageLines(V, false);
+  if (cur().pages) $('#etab').textContent = PAGES[S.page].file;   // 見ているページのファイル名
+  let n = 0;
+  const line = raw => '<span class="eln"><span class="lnno">' + (++n) + '</span><span class="ltx">' + hlCode(raw) + '</span></span>';
+  // 箱は「開始タグの行・中身のブロック・終了タグの行」に分け、中身も1つずつ連動できるようにする
+  const blk = (b, ind) => '<span class="eblk' + (b.id === S.flashId ? ' flash' : '') + '" data-id="' + b.id + '">' +
+    (b.kids ? line(ind + '<' + b.type + '>') + b.kids.map(k => blk(k, ind + '  ')).join('') + line(ind + '</' + b.type + '>')
+            : blockLines(b, false).map(l => line(unesc(ind + l))).join('')) + '</span>';
+  el.innerHTML = L.head.map(l => line(unesc(l))).join('') +
+    V.map(b => blk(b, '    ')).join('') +
+    L.foot.map(l => line(unesc(l))).join('');
+}
+function renderKinds(){
+  const el = $('#kinds'); if (!el) return;
+  const used = ALL.filter(t => flat(S.blocks).some(b => b.type === t));
+  const need = cur().free;
+  let h = '<span aria-hidden="true">🎯</span>';
+  for (let i = 0; i < Math.max(need, used.length); i++){
+    h += '<span class="k' + (i < used.length ? ' on" style="' + colVars(used[i]) : '') + '">' + (i < used.length ? shortTag(used[i]) : '') + '</span>';
+  }
+  h += '<span>' + Math.min(used.length, need) + ' / ' + need + ' ' + fu('{種類|しゅるい}') + '</span>';
+  el.innerHTML = h;
+  fitSample();
+}
+function updateUndo(){ const u = $('#undoBtn'); if (u) u.disabled = !S.undo.length; }
+/* 見本と右の画面を、同じ位置・同じ高さのブラウザ枠にそろえる（3列表示のときだけ）。
+   見本は左の列に収まるように縮小し、右の画面は中身が長いと枠の中でスクロールする */
+function fitSample(){
+  const info = $('.main3 .info'), box = $('#sampleBox'), inner = box && $('.sfit', box);
+  const pvR = $('#pv'), right = pvR && pvR.closest('.right'), brR = $('#viewWrap'), codeV = $('#codeV');
+  if (!info || !inner || !pvR || !brR) return;
+  const pvS = inner.closest('.pv');
+  inner.style.zoom = 1; pvS.style.height = ''; pvR.style.height = ''; pvR.style.minHeight = ''; pvR.style.overflow = ''; brR.style.marginTop = '';
+  if (codeV) codeV.style.height = '';
+  $$('img', inner).forEach(i => { if (!i.complete) i.addEventListener('load', fitSample, {once:true}); });
+  // 左右の列が横に並んでいて、どちらも追従表示のときだけそろえる
+  const sideBySide = getComputedStyle(info).position === 'sticky' && Math.abs(info.getBoundingClientRect().top - right.getBoundingClientRect().top) < 2;
+  if (!sideBySide) return;
+  const limit = parseFloat(getComputedStyle(info).maxHeight) || window.innerHeight;
+  const others = info.scrollHeight - box.offsetHeight;     // 見本以外の高さ
+  const frame = box.offsetHeight - inner.offsetHeight;     // ブラウザ枠などの高さ
+  const room = Math.max(120, limit - others - frame - 4);  // 見本の中身に使える高さ
+  const natural = inner.offsetHeight, pad = pvS.offsetHeight - natural;   // 縮小する前に測る
+  const apply = rm => {
+    inner.style.zoom = natural > rm ? Math.max(0.35, rm / natural) : 1;
+    pvS.style.height = (pad + rm) + 'px';
+  };
+  let rm = room;
+  apply(rm);
+  // 文字の折り返しなどで、まだ左の列からはみ出していれば、はみ出た分だけ小さくする
+  for (let k = 0; k < 3 && info.scrollHeight > info.clientHeight && rm > 120; k++){
+    rm = Math.max(120, rm - (info.scrollHeight - info.clientHeight) - 2);
+    apply(rm);
+  }
+  const pvH = pad + rm;
+  pvR.style.height = pvH + 'px'; pvR.style.minHeight = '0'; pvR.style.overflow = 'auto';
+  if (codeV) codeV.style.height = pvH + 'px';   // コード画面も同じ高さ（枠の上の帯も同じ高さにしてある）
+  // 右の枠の上端を、見本の枠の上端に合わせる
+  const brS = box.querySelector('.browser');
+  const gap = (brS.getBoundingClientRect().top - info.getBoundingClientRect().top) - (brR.getBoundingClientRect().top - right.getBoundingClientRect().top);
+  // （brR は右の枠を包む #viewWrap。ブラウザとコードのどちらを表示していても同じ位置になる）
+  // 上の見出しの下余白と重なる（相殺される）ので、その分を足す
+  const above = brR.previousElementSibling ? parseFloat(getComputedStyle(brR.previousElementSibling).marginBottom) || 0 : 0;
+  if (gap > 0) brR.style.marginTop = (gap + above) + 'px';
+}
+// 画面の大きさが変わったら、レイアウトが落ち着いた次の描画でそろえ直す
+let refitTimer = 0;
+const refit = () => {
+  requestAnimationFrame(() => requestAnimationFrame(fitSample));
+  clearTimeout(refitTimer); refitTimer = setTimeout(fitSample, 300);   // 念のため少し後にもう一度
+};
+window.addEventListener('resize', refit);
+// 3列⇔縦並びの切り替わりでも、そろえ直す（または解除する）
+['(max-width:1180px)', '(max-width:960px)'].forEach(m => {
+  const mq = window.matchMedia(m);
+  if (mq.addEventListener) mq.addEventListener('change', refit); else if (mq.addListener) mq.addListener(refit);
+});
+function setBubble(html, warm){
+  const b = $('#bubble'); if (!b) return;
+  b.innerHTML = html; b.classList.toggle('warm', !!warm);
+  fitSample();
+  // 左の列がスクロールしていても、ヒントが出たら見える位置まで動かす
+  const info = b.closest('.info');
+  if (warm && info && info.scrollHeight > info.clientHeight){
+    info.scrollTop += b.getBoundingClientRect().top - info.getBoundingClientRect().top - 80;
+  }
+}
+
+/* ===================== 操作 ===================== */
+function pushUndo(){ S.undo.push(JSON.stringify(S.blocks)); if (S.undo.length > 60) S.undo.shift(); }
+function change(fn){
+  pushUndo(); fn(); clearHints(); setBubble(fu(cur().robot)); renderAll();
+}
+function undo(){
+  if (!S.undo.length) return;
+  S.blocks = JSON.parse(S.undo.pop());
+  clearHints(); renderAll();
+}
+// pos は {p:箱の id（一番外側なら null）, i:位置}。省略すると「＋追加」の入れ先の最後
+function addBlock(type, pos){
+  if (!pos){
+    if (S.into && !isBox(type)) pos = {p:S.into, i:findBlock(S.into).kids.length};
+    else if (S.into) pos = {p:null, i:findLoc(S.into).i + 1};   // 箱は、選んでいる箱のすぐ後ろへ
+    else pos = {p:null, i:S.blocks.length};
+  }
+  change(() => {
+    const b = newBlock(type);
+    kidsOf(pos.p).splice(pos.i, 0, b); S.flashId = b.id;
+    if (b.kids) S.into = b.id;   // 箱を置いたら、続けてその中に入れられるようにする
+  });
+}
+function moveTo(id, pos){
+  const l = findLoc(id);
+  if (!l || l.p === pos.p && l.i === pos.i) return;
+  change(() => { l.arr.splice(l.i, 1); kidsOf(pos.p).splice(pos.i, 0, l.b); });
+}
+
+/* 連動ハイライト：左のブロックと右の画面の同じ data-id を光らせる */
+const HL_SEL = '#work [data-id], #pv [data-id], #codeV [data-id]';
+function setHL(id){
+  S.hl = id;
+  $$('.hl').forEach(e => e.classList.remove('hl'));
+  if (!id) return;
+  $$('[data-id="' + id + '"]').forEach(e => { if (e.closest('#work, #pv, #codeV')) e.classList.add('hl'); });
+  // コード画面が見えていて、該当行が枠の外なら、見える位置までスクロールする
+  const c = $('#codeV'), e = c && $('[data-id="' + id + '"]', c);
+  if (e && !c.closest('.editor').hidden && (e.offsetTop < c.scrollTop || e.offsetTop + e.offsetHeight > c.scrollTop + c.clientHeight)){
+    c.scrollTop = e.offsetTop - 40;
+  }
+}
+document.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse' || drag && drag.active || S.screen !== 'stage') return;
+  const t = e.target.closest && e.target.closest(HL_SEL);
+  const id = t ? t.dataset.id : null;
+  if (id !== S.hl) setHL(id);
+});
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' || S.screen !== 'stage') return;
+  const t = e.target.closest && e.target.closest(HL_SEL);
+  setHL(t ? t.dataset.id : null);
+});
+document.addEventListener('focusin', e => {
+  if (S.screen !== 'stage') return;
+  const t = e.target.closest && e.target.closest('#work [data-id]');
+  if (t) setHL(t.dataset.id);
+});
+
+/* タグの説明：マウスを合わせると小さな説明を出す */
+const tip = document.createElement('div');
+tip.className = 'tip'; tip.setAttribute('role', 'tooltip'); tip.hidden = true;
+document.body.appendChild(tip);
+let tipEl = null;
+function hideTip(){ tip.hidden = true; tipEl = null; }
+document.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse' || drag && drag.active) return;
+  const ct = e.target.closest && e.target.closest('.ct[data-tag]');
+  if (!ct){ if (tipEl) hideTip(); return; }
+  if (ct === tipEl) return;
+  const info = TAGINFO[ct.dataset.tag]; if (!info) return;
+  tipEl = ct;
+  tip.innerHTML = '<b>' + esc(ct.dataset.tag === 'src' || ct.dataset.tag === 'href' ? ct.dataset.tag : '<' + ct.dataset.tag + '>') + '</b>' + fu(info.name) +
+    (info.orig ? '<span class="orig">💡 ' + info.orig + '</span>' : '') + esc(info.desc) +
+    (ct.closest('#work, #tray') ? '<small>' + fu('クリックすると{使用例|しようれい}を{表示|ひょうじ}します') + '</small>' : '');
+  tip.hidden = false;
+  const r = ct.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+  let y = r.bottom + 8; if (y + h > window.innerHeight - 8) y = r.top - h - 8;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+window.addEventListener('scroll', hideTip, {passive:true});
+
+/* プレビューのリンクは押しても移動しない */
+['click','auxclick'].forEach(ev => document.addEventListener(ev, e => {
+  const a = e.target.closest && e.target.closest('.pv a');
+  if (a) e.preventDefault();
+}));
+
+/* ===================== ドラッグ（マウス・タッチ共通） ===================== */
+let drag = null, justDragged = 0;
+function dragStart(e, kind, val, el){
+  if (e.button > 0 || drag) return;
+  drag = {kind:kind, val:val, el:el, x0:e.clientX, y0:e.clientY, pid:e.pointerId, active:false, idx:-1, ghost:null, line:null};
+}
+function dragActivate(e){
+  hideTip();
+  const r = drag.el.getBoundingClientRect();
+  const g = drag.el.cloneNode(true);
+  g.classList.add('ghost'); g.classList.remove('hl');
+  g.style.width = r.width + 'px';
+  drag.offX = e.clientX - r.left; drag.offY = e.clientY - r.top;
+  document.body.appendChild(g);
+  drag.ghost = g;
+  drag.line = document.createElement('div'); drag.line.className = 'dropline';
+  if (drag.kind === 'blk') drag.el.classList.add('dragging');
+  document.body.classList.add('dragnow');
+  drag.active = true;
+  setHL(null);
+}
+function dragOver(x, y){
+  const work = $('#work'), wr = work.getBoundingClientRect();
+  const inside = x >= wr.left - 40 && x <= wr.right + 40 && y >= wr.top - 70 && y <= wr.bottom + 70;
+  if (drag.kind === 'tray' && !inside){
+    drag.idx = -1; work.classList.remove('over'); if (drag.line.parentNode) drag.line.remove(); return;
+  }
+  work.classList.toggle('over', drag.kind === 'tray');
+  // 箱の口の上なら、その箱の中へ（箱そのものは一番外側にだけ置ける）
+  const dragBox = drag.kind === 'tray' ? isBox(drag.val) : !!(findBlock(drag.val) || {}).kids;
+  let par = work, pid = null;
+  if (!dragBox){
+    const m = $$('.kids', work).find(k => {
+      if (drag.el.contains(k)) return false;
+      const r = k.getBoundingClientRect(); return y >= r.top - 4 && y <= r.bottom + 4;
+    });
+    if (m){ par = m; pid = m.dataset.p; }
+  }
+  $$('.kids.over', work).forEach(k => k.classList.remove('over'));
+  if (pid) par.classList.add('over');
+  const els = $$(':scope > .blk', par).filter(el => el !== drag.el);
+  let idx = els.length;
+  for (let k = 0; k < els.length; k++){ const r = els[k].getBoundingClientRect(); if (y < r.top + r.height / 2){ idx = k; break; } }
+  drag.idx = {p:pid, i:idx};
+  const drop = $('.drophere', work);
+  if (drop) drop.remove();
+  if (idx < els.length) par.insertBefore(drag.line, els[idx]); else par.appendChild(drag.line);
+}
+function dragEnd(){
+  if (!drag) return;
+  if (drag.ghost) drag.ghost.remove();
+  if (drag.line && drag.line.parentNode) drag.line.remove();
+  if (drag.el) drag.el.classList.remove('dragging');
+  const w = $('#work'); if (w){ w.classList.remove('over'); $$('.kids.over', w).forEach(k => k.classList.remove('over')); }
+  document.body.classList.remove('dragnow');
+  drag = null;
+}
+window.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  if (!drag.active){
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8) return;
+    dragActivate(e);
+  }
+  e.preventDefault();
+  drag.ghost.style.transform = 'translate(' + (e.clientX - drag.offX) + 'px,' + (e.clientY - drag.offY) + 'px) scale(.97)';
+  dragOver(e.clientX, e.clientY);
+  if (e.clientY < 90) window.scrollBy(0, -14);
+  else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
+}, {passive:false});
+window.addEventListener('pointerup', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const d = drag;
+  dragEnd();
+  if (!d.active) return;
+  justDragged = Date.now();
+  if (d.kind === 'tray'){ if (d.idx !== -1) addBlock(d.val, d.idx); else renderWork(); }
+  else if (d.idx !== -1) moveTo(d.val, d.idx);
+  if (d.kind === 'blk' && $('#work') && !$('#work .blk')) renderWork();
+});
+window.addEventListener('pointercancel', () => { if (drag){ dragEnd(); if (S.screen === 'stage') renderWork(); } });
+
+/* ===================== 判定とヒント ===================== */
+function countMap(arr){ const m = {}; arr.forEach(t => { m[t] = (m[t] || 0) + 1; }); return m; }
+function missingOf(need, have){
+  const m = countMap(have), out = [];
+  need.forEach(t => { if (m[t]) m[t]--; else out.push(t); });
+  return out;
+}
+function extraIdx(target, have){
+  const m = countMap(target), out = [];
+  have.forEach((t, i) => { if (m[t]) m[t]--; else out.push(i); });
+  return out;
+}
+function clearHints(){
+  $$('.glow').forEach(e => e.classList.remove('glow'));
+  $$('.posTag').forEach(e => e.remove());
+}
+function glowTray(types){ $$('#tray .chip').forEach(c => { if (types.indexOf(c.dataset.type) >= 0) c.classList.add('glow'); }); }
+function glowBlock(i, tag){
+  const el = $$('#work .blk')[i]; if (!el) return;
+  el.classList.add('glow');
+  if (tag){ const t = document.createElement('span'); t.className = 'posTag'; t.textContent = tag; el.appendChild(t); }
+  el.scrollIntoView({block:'nearest', behavior:'smooth'});
+}
+function stripHTML(types, ordered){
+  return '<div class="strip">' + types.map((t, i) =>
+    (i && ordered ? '<span class="arr" aria-hidden="true">▶</span>' : '') +
+    '<span class="ochip" style="' + colVars(t) + '">' + (ordered ? '<span class="badge" style="width:28px;height:28px;font-size:15px">' + (i + 1) + '</span>' : '') + '<span class="ct">' + shortTag(t) + '</span></span>'
+  ).join('') + '</div>';
+}
+function shakeDone(){ const d = $('#doneBtn'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); }
+
+// 箱の正解の形（箱の中に部品のチップを並べた図）
+function treeStrip(blocks){
+  const chip = b => '<span class="ochip" style="' + colVars(b.type) + '"><span class="ct">' + shortTag(b.type) + '</span></span>';
+  return '<div class="strip tstrip">' + blocks.map(b => b.kids
+    ? '<div class="tbox" style="' + colVars(b.type) + '"><span class="ct">' + shortTag(b.type) + '</span><div class="tkids">' + (b.kids.map(chip).join('') || '<span class="tnone">' + fu('（{空|から}）') + '</span>') + '</div></div>'
+    : chip(b)).join('') + '</div>';
+}
+// 箱の中身まで含めた答え合わせ。上から順に「どの箱の中の、何の部品か」を比べる
+function judgeTree(st){
+  const tgB = mk(st.sample);
+  if (sig(S.blocks) === sig(tgB)) return true;
+  const toks = blocks => [].concat.apply([], blocks.map(b => [{t:b.type, p:''}].concat(b.kids ? b.kids.map(k => ({t:k.type, p:b.type})) : [])));
+  const have = toks(S.blocks), want = toks(tgB);
+  S.fails++; shakeDone();
+  if (st.k === 'c'){ setBubble(fu('{見本|みほん}と{比較|ひかく}して、もう{一度|いちど}{確認|かくにん}してみましょう'), true); return false; }
+  let w = 0; while (w < Math.min(have.length, want.length) && have[w].t === want[w].t && have[w].p === want[w].p) w++;
+  const miss = missingOf(want.map(x => x.t), have.map(x => x.t));
+  const glowPos = () => { if (w < have.length) glowBlock(w, (w + 1) + '番目'); else glowTray([want[w].t]); };
+  if (S.fails === 1){
+    if (miss.length){ setBubble(fu('{足|た}りない{部品|ぶひん}が{光|ひか}っています'), true); glowTray(miss); }
+    else setBubble(fu('{惜|お}しい！{箱|はこ}の{中|なか}と{外|そと}を{見本|みほん}と{比|くら}べてみましょう。「{箱|はこ}を{表示|ひょうじ}」を{使|つか}うと{分|わ}かりやすくなります'), true);
+  } else if (S.fails === 2){
+    const x = want[w], y = have[w];
+    if (x && y && x.t === y.t) setBubble(x.p ? (w + 1) + fu('{番目|ばんめ}の ') + shortTag(x.t) + fu(' は ') + shortTag(x.p) + fu(' の{中|なか}に{入|い}れます') : (w + 1) + fu('{番目|ばんめ}の ') + shortTag(x.t) + fu(' は{箱|はこ}の{外|そと}に{置|お}きます'), true);
+    else if (x) setBubble((w + 1) + fu('{番目|ばんめ}は、{見本|みほん}では ') + (x.p ? shortTag(x.p) + fu(' の{中|なか}の ') : fu('{箱|はこ}の{外|そと}の ')) + shortTag(x.t) + fu(' です'), true);
+    else setBubble(fu('{光|ひか}っている{箇所|かしょ}を{確認|かくにん}してください'), true);
+    glowPos();
+  } else {
+    setBubble(fu('{正解|せいかい}の{形|かたち}はこちらです'), true);
+    S.strip = treeStrip(tgB); $('#strip').innerHTML = S.strip; fitSample();
+    glowPos();
+  }
+  return false;
+}
+
+function judge(){
+  const st = cur(), types = S.blocks.map(b => b.type);
+  clearHints();
+  if (st.tree){ if (!judgeTree(st)) return; }
+  else if (st.free){
+    const used = ALL.filter(t => types.indexOf(t) >= 0);
+    if (used.length < st.free){
+      S.fails++; shakeDone();
+      setBubble(fu('あと' + (st.free - used.length) + '{種類|しゅるい}の{部品|ぶひん}が{必要|ひつよう}です'), true);
+      glowTray(ALL.filter(t => used.indexOf(t) < 0));
+      return;
+    }
+  } else if (st.need){
+    const miss = missingOf(st.need, types);
+    if (miss.length){
+      S.fails++; shakeDone();
+      glowTray(miss);
+      if (S.fails >= 3){ S.strip = stripHTML(st.need, false); $('#strip').innerHTML = S.strip; setBubble(fu('このブロックを{配置|はいち}してください'), true); }
+      else setBubble(fu(S.fails === 1 ? '{惜|お}しい！もう{一度|いちど}{確認|かくにん}してみましょう' : '{光|ひか}っているブロックが{必要|ひつよう}です'), true);
+      return;
+    }
+  } else {
+    const tg = targetOf(st);
+    const same = tg.length === types.length && tg.every((t, i) => t === types[i]);
+    if (!same){
+      S.fails++; shakeDone();
+      if (st.k === 'c'){ setBubble(fu('{見本|みほん}と{比較|ひかく}して、もう{一度|いちど}{確認|かくにん}してみましょう'), true); return; }
+      const miss = missingOf(tg, types), extra = extraIdx(tg, types);
+      let wrong = 0; while (wrong < Math.max(tg.length, types.length) && tg[wrong] === types[wrong]) wrong++;
+      const glowPos = () => {
+        if (wrong < types.length) glowBlock(wrong, (wrong + 1) + '番目');
+        else glowTray([tg[wrong]]);
+      };
+      if (S.fails === 1){
+        setBubble(fu('{惜|お}しい！もう{一度|いちど}{確認|かくにん}してみましょう'), true);
+        if (miss.length) glowTray(miss);
+        else if (extra.length) extra.forEach(i => glowBlock(i));
+        else glowPos();
+      } else if (S.fails === 2){
+        setBubble(fu('{光|ひか}っている{箇所|かしょ}を{確認|かくにん}してください'), true);
+        glowPos();
+      } else {
+        setBubble(fu('{正解|せいかい}の{並|なら}び{順|じゅん}はこちらです'), true);
+        S.strip = stripHTML(tg, true); $('#strip').innerHTML = S.strip; fitSample();
+        glowPos();
+      }
+      return;
+    }
+  }
+  const ei = flat(S.blocks).findIndex(isEmpty);
+  if (ei >= 0){
+    shakeDone();
+    setBubble(fu('{空欄|くうらん}に{文字|もじ}を{入力|にゅうりょく}してください'), true);
+    glowBlock(ei);
+    const e = $$('#work .blk')[ei].querySelector('.inp.empty'); if (e) e.focus({preventScroll:true});
+    return;
+  }
+  // 共通の部分の練習：3つのページを全部見てから正解にする
+  if (st.pages && S.seen.length < PAGES.length){
+    shakeDone();
+    setBubble(fu('{形|かたち}は{正|ただ}しいです！{右|みぎ}の{画面|がめん}の{上|うえ}のタブで、まだ{見|み}ていないページも{見|み}てみましょう'), true);
+    $$('.pgtab').forEach(t => { if (S.seen.indexOf(+t.dataset.pg) < 0) t.classList.add('glow'); });
+    return;
+  }
+  success();
+}
+
+function success(){
+  const st = cur();
+  prog.cleared[st.id] = true; saveProg();
+  confetti();
+  const ni = followIdx();
+  const last = ni < 0 && STAGES.every(s => prog.cleared[s.id]);
+  // 練習10（自分のページ）はその場で保存できるようにする
+  const canSave = st.free && S.screen === 'stage';
+  modal('<div class="clearbox"><div class="bigstar" aria-hidden="true">★</div><div class="cl1">' + fu(last ? '{全|ぜん}ステージクリア！' : '{正解|せいかい}です！') + '</div>' +
+    (st.why ? '<p class="why"><b>💡 ' + fu('なぜこの{箱|はこ}？') + '</b>' + fu(st.why) + '</p>' : '') +
+    (canSave ? '<p class="savenote" id="saveNote">' + fu('{作|つく}ったページをファイルとして{保存|ほぞん}できます') + '</p><div class="mbtns"><button class="bigsub" id="mSave">💾 ' + fu('このページを{保存|ほぞん}') + '</button></div>' : '') +
+    '<div class="mbtns">' + (ni >= 0 ? '<button class="bigok" id="mNext">' + fu('{次|つぎ}へ') + ' ▶</button>' : '') +
+    '<button class="bigsub" id="mSel">' + fu('ステージ{選択|せんたく}') + '</button></div></div>', {noBackdrop:true});
+  if ($('#mNext')) $('#mNext').addEventListener('click', () => { closeModal(); openStage(ni); });
+  $('#mSel').addEventListener('click', () => { closeModal(); renderSelect(); });
+  if (canSave) $('#mSave').addEventListener('click', () => { const name = downloadPage(S.blocks); $('#saveNote').innerHTML = savedMsg(name); $('#saveNote').classList.add('done'); });
+  setBubble(fu('お{見事|みごと}です！'));
+}
+function followIdx(){
+  const n = S.idx + 1;
+  return n < STAGES.length && isUnlocked(n) ? n : -1;
+}
+function goNext(){
+  const n = followIdx();
+  if (n >= 0) openStage(n); else renderSelect();
+}
+function confetti(){
+  const box = document.createElement('div'); box.className = 'confetti';
+  const cols = ['#f2b51d','#e0773a','#3f9a5b','#3b7dd8','#cc5079','#8e5cc4'];
+  for (let i = 0; i < 46; i++){
+    const p = document.createElement('i');
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.background = cols[i % cols.length];
+    p.style.animationDelay = (Math.random() * .35) + 's';
+    p.style.animationDuration = (1.2 + Math.random() * .7) + 's';
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 2400);
+}
+
+/* ===================== モーダル ===================== */
+let modalOpts = {};
+function modal(html, opts){
+  hideTip();
+  modalOpts = opts || {};
+  const m = $('#modal');
+  m.innerHTML = '<div class="mbox" role="dialog" aria-modal="true">' + html + '</div>';
+  m.hidden = false;
+  $$('[data-close]', m).forEach(b => b.addEventListener('click', closeModal));
+  const f = $('.bigok, .bigsub', m); if (f) f.focus({preventScroll:true});
+}
+function closeModal(){
+  const m = $('#modal'); if (m.hidden) return;
+  m.hidden = true; m.innerHTML = '';
+  if (modalOpts.onClose){ const fn = modalOpts.onClose; modalOpts = {}; fn(); }
+}
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal' && !modalOpts.noBackdrop) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modalOpts.noBackdrop) closeModal(); });
+
+// タグの使用例（2〜3パターン）：左にコード、右に表示結果
+function showTagInfo(tag){
+  const info = TAGINFO[tag]; if (!info) return;
+  const head = tag === 'src' || tag === 'href' ? tag : '<' + tag + '>';
+  modal('<div class="mtitle"><span class="ct">' + esc(head) + '</span> ' + fu(info.name) + '</div>' +
+    (info.orig ? '<p class="exorig">💡 ' + fu('{名前|なまえ}の{由来|ゆらい}') + '：' + info.orig + '</p>' : '') +
+    '<p class="exdesc">' + esc(info.desc) + '</p><div class="exlist">' +
+    info.ex.map((code, i) => '<div class="excard"><div class="exn">' + fu('{使用例|しようれい}') + ' ' + (i + 1) + '</div>' +
+      '<pre class="excode">' + hlCode(code) + '</pre>' + browserHTML(exPreview(code)) + '</div>').join('') +
+    '</div><div class="mbtns"><button class="bigok" data-close>' + fu('{閉|と}じる') + '</button></div>');
+}
+const BOXEX = {header:[['h1','私のページ']], main:[['p','はじめまして。']], footer:[['p','連絡先：受付まで']]};
+function newPartHTML(type){
+  const b = newBlock(type, BOXEX[type]);
+  return '<div class="newp"><div class="nl">✨ ' + fu('{新|あたら}しい{部品|ぶひん}') + '</div><div class="flow">' +
+    '<div class="fx" style="flex:0 1 auto">' + chipHTML(type, {stat:true}) + '</div><span class="farr" aria-hidden="true">▶</span>' +
+    '<div class="fx">' + browserHTML(pvHTML([b])) + '</div></div>' +
+    '<div class="cap">' + esc(TAGINFO[type].desc) + '</div></div>';
+}
+function showIntro(){
+  const st = cur();
+  let h = '<div class="ihead">' + cardLabel(st) + ' ' + st.icon + '</div><div class="igoal">' + fu(st.goal) + '</div>' +
+    (st.wrongFig
+      // 間違ったページと正しいページを並べて、箱が違うと見た目がどう変わるかを見せる
+      ? '<div class="cmpgrid wrongfig"><div><h3>✕ ' + fu('{今|いま}のページ') + '</h3>' + browserHTML(pvHTML(mk(st.start))) + '</div><div><h3>○ ' + fu('{正|ただ}しいページ') + '</h3>' + browserHTML(pvHTML(mk(st.sample))) + '</div></div>' +
+        '<div class="cap">' + fu('サイト{名|めい}が{一番下|いちばんした}、{連絡先|れんらくさき}が{一番上|いちばんうえ}にあると、{見|み}る{人|ひと}はサイト{名|めい}を{探|さが}して{迷|まよ}ってしまいます') + '</div>'
+      : st.pagesFig ? '' : '<div class="ibig">' + browserHTML(pvHTML(mk(st.sample))) + '</div>');
+  if (st.box){
+    h += '<div class="boxfig" aria-hidden="true"><div class="lid o">&lt;h1&gt;<small>' + fu('{開始|かいし}タグ') + '</small></div><div class="mid">私のページ</div><div class="lid c">&lt;/h1&gt;<small>' + fu('{終了|しゅうりょう}タグ') + '</small></div></div>' +
+      '<div class="cap">' + fu('&lt;h1&gt; と &lt;/h1&gt; で{囲|かこ}んだ{文字|もじ}が{見出|みだ}しになります') + '</div>';
+  }
+  if (st.boxFig){
+    // ページは「上部・主な内容・下部」の3つの箱に分けられる
+    const row = (t, cap) => '<div class="pgbox" style="' + colVars(t) + '"><span class="ct">' + shortTag(t) + '</span><span>' + fu(cap) + '</span></div>';
+    h += '<div class="newp"><div class="pgfig">' + row('header', 'ページの{上部|じょうぶ}：{題名|だいめい}やメニュー') + row('main', 'ページの{主|おも}な{内容|ないよう}：{伝|つた}えたいこと') + row('footer', 'ページの{下部|かぶ}：{連絡先|れんらくさき}など') + '</div>' +
+      '<div class="cap">' + fu('{多|おお}くのWebページは、この3つの{箱|はこ}でできています。{箱|はこ}は{画面|がめん}には{見|み}えませんが、{中身|なかみ}をまとめる{役割|やくわり}があります') + '</div></div>';
+  }
+  if (st.pagesFig){
+    // 3つのページを並べて、上と下が同じことを見せる
+    const smp = mk(st.sample);
+    h += '<div class="newp"><div class="pagesfig">' + PAGES.map(pg => {
+      const bl = pg.main ? smp.map(b => b.type === 'main' ? Object.assign({}, b, {kids:mk(pg.main)}) : b) : smp;
+      return '<div><h3>📄 ' + pg.name + '</h3>' + browserHTML(pvHTML(bl)) + '</div>';
+    }).join('') + '</div>' +
+      '<div class="cap">' + fu('{上|うえ}（ヘッダー）と{下|した}（フッター）は、どのページも{同|おな}じです。{変|か}わるのは{真|ま}ん{中|なか}（&lt;main&gt;）だけです。<br>Word の「ヘッダー・フッター」が{全|ぜん}ページに{出|で}るのと{同|おな}じ{考|かんが}え{方|かた}です') + '</div></div>';
+  }
+  if (st.newT) h += st.newT.map(newPartHTML).join('');
+  if (st.orderFig){
+    const ex = mk(INTRO2);
+    h += '<div class="newp"><div class="orderfig"><div class="ostack">' + ex.map((b, i) => '<div class="ochip" style="' + colVars(b.type) + '"><span class="badge">' + (i + 1) + '</span><span class="ct">' + shortTag(b.type) + '</span></div>').join('') +
+      '</div><span class="farr" style="font-size:30px;color:#c58b4a" aria-hidden="true">▶</span><div style="flex:0 1 300px;min-width:0">' + browserHTML(pvHTML(ex)) + '</div></div>' +
+      '<div class="cap">' + fu('{上|うえ}に{置|お}いたブロックほど、{画面|がめん}の{上|うえ}に{表示|ひょうじ}されます') + '</div></div>';
+  }
+  h += '<div class="mbtns"><button class="bigok" data-close>' + fu('{始|はじ}める') + ' ▶</button></div>';
+  modal(h);
+}
+function showSample(){
+  modal('<div class="mtitle">' + fu('{見本|みほん}') + '</div><div class="ibig">' + browserHTML(pvHTML(mk(cur().sample))) + '</div><div class="mbtns"><button class="bigok" data-close>' + fu('{閉|と}じる') + '</button></div>');
+}
+function showCompare(){
+  modal('<div class="cmpgrid"><div><h3>' + fu('{見本|みほん}') + '</h3>' + browserHTML(pvHTML(mk(cur().sample))) + '</div>' +
+    '<div><h3>' + fu('あなたの{作品|さくひん}') + '</h3>' + browserHTML(S.blocks.length ? pvHTML(S.blocks) : '<div class="pvempty">' + fu('（まだ{何|なに}もありません）') + '</div>') + '</div></div>' +
+    '<div class="mbtns"><button class="bigok" data-close>' + fu('{閉|と}じる') + '</button></div>');
+}
+function showGuide(onClose){
+  const b = newBlock('h1');
+  const k1 = '<div style="display:flex;align-items:flex-start">' + chipHTML('h1', {stat:true}) + '<span class="hand" aria-hidden="true">👆</span></div>';
+  const k2 = '<div style="width:100%">' + blkHTML(b, 0) + '</div>';
+  const k3 = '<div style="width:100%">' + browserHTML(pvHTML([b])) + '</div>';
+  modal('<div class="mtitle">' + fu('{使|つか}い{方|かた}') + '</div><div class="komas">' +
+    '<div class="koma"><div class="kn">1</div><div class="kart">' + k1 + '</div><div class="kcap">' + fu('「＋{追加|ついか}」でブロックを{置|お}く') + '</div></div>' +
+    '<div class="karr" aria-hidden="true">▶</div>' +
+    '<div class="koma"><div class="kn">2</div><div class="kart">' + k2 + '</div><div class="kcap">' + fu('{黄色|きいろ}の{欄|らん}に{文字|もじ}を{入力|にゅうりょく}') + '</div></div>' +
+    '<div class="karr" aria-hidden="true">▶</div>' +
+    '<div class="koma"><div class="kn">3</div><div class="kart">' + k3 + '</div><div class="kcap">' + fu('{右|みぎ}の{画面|がめん}で{結果|けっか}を{確認|かくにん}') + '</div></div>' +
+    '</div><p class="cap">' + fu('&lt;h1&gt; などのタグにマウスを{合|あ}わせると{説明|せつめい}、クリックすると{使用例|しようれい}が{表示|ひょうじ}されます。') + '</p>' +
+    '<div class="mbtns"><button class="bigok" data-close>OK ▶</button></div>', {onClose:onClose});
+}
+
+/* ===================== 完成ページの保存 ===================== */
+// 並べたブロックを1つのHTMLファイルにする。forFile のときは画像をファイルの中に埋め込む（表示用は ねこ.svg と短く書く）
+function blockLines(b, forFile){
+  switch (b.type){
+    case 'h1': case 'h2': case 'p': return ['<' + b.type + '>' + esc(b.text) + '</' + b.type + '>'];
+    case 'strong': return ['<p><strong>' + esc(b.text) + '</strong></p>'];
+    case 'hr': return ['<hr>'];
+    case 'img': { const p = picById(b.pic); return ['<img src="' + (forFile ? picURI(p.id) : p.name + '.svg') + '" alt="' + esc(p.name) + '">']; }
+    case 'a': return ['<a href="' + esc(b.href) + '">' + esc(b.text) + '</a>'];
+    case 'ul': return ['<ul>'].concat(b.items.map(t => '  <li>' + esc(t) + '</li>'), ['</ul>']);
+    case 'header': case 'main': case 'footer':
+      return ['<' + b.type + '>'].concat([].concat.apply([], b.kids.map(k => blockLines(k, forFile))).map(l => '  ' + l), ['</' + b.type + '>']);
+  }
+  return [];
+}
+const pageTitle = blocks => ((flat(blocks).find(b => b.type === 'h1') || {}).text || '').trim() || '私のページ';
+function pageLines(blocks, forFile){
+  const body = [].concat.apply([], blocks.map(b => blockLines(b, forFile))).map(l => '    ' + l);
+  return {head:['<!DOCTYPE html>', '<html lang="ja">', '  <head>', '    <meta charset="UTF-8">', '    <title>' + esc(pageTitle(blocks)) + '</title>', '  </head>', '  <body>'],
+          body:body, foot:['  </body>', '</html>']};
+}
+function pageFileName(blocks){
+  const t = pageTitle(blocks).replace(/[\\\/:*?"<>|\s]+/g, '').slice(0, 30);
+  return (t || '私のページ') + '.html';
+}
+function downloadPage(blocks){
+  const L = pageLines(blocks, true);
+  const html = L.head.concat(L.body, L.foot).join('\n') + '\n';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+  a.download = pageFileName(blocks);
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  return a.download;
+}
+const savedMsg = name => '💾 ' + fu('{保存|ほぞん}しました。ダウンロードフォルダの「') + esc(name) + fu('」をダブルクリックすると、ブラウザで{開|ひら}けます。');
+// 保存の前に、ファイル全体のコードと表示結果を見せる（並べたブロックは <body> の中＝黄色の部分）
+function showSave(){
+  if (!S.blocks.length){ setBubble(fu('ブロックを1つ{以上|いじょう}{並|なら}べてから{保存|ほぞん}してください'), true); return; }
+  const L = pageLines(S.blocks, false);
+  const ln = (l, cls) => '<span class="dl' + (cls ? ' ' + cls : '') + '">' + hlCode(l.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')) + '</span>';
+  const code = L.head.map(l => ln(l)).concat(L.body.map(l => ln(l, 'inb')), L.foot.map(l => ln(l))).join('');
+  modal('<div class="mtitle">💾 ' + fu('ページを{保存|ほぞん}') + '</div>' +
+    '<p class="exdesc">' + fu('これがHTMLファイル{全体|ぜんたい}のコードです。{並|なら}べたブロックは &lt;body&gt; の{中|なか}（{黄色|きいろ}の{部分|ぶぶん}）に{入|はい}ります。') + '</p>' +
+    '<div class="excard"><pre class="excode savecode">' + code + '</pre>' + browserHTML(pvHTML(S.blocks)) + '</div>' +
+    '<p class="savenote" id="saveNote">' + fu('ファイル{名|めい}：') + esc(pageFileName(S.blocks)) + fu('（{画像|がぞう}はファイルの{中|なか}に{埋|う}め{込|こ}んで{保存|ほぞん}します）') + '</p>' +
+    '<div class="mbtns"><button class="bigok" id="dlBtn">💾 ' + fu('ダウンロード') + '</button><button class="bigsub" data-close>' + fu('{閉|と}じる') + '</button></div>');
+  $('#dlBtn').addEventListener('click', () => { const name = downloadPage(S.blocks); $('#saveNote').innerHTML = savedMsg(name); $('#saveNote').classList.add('done'); });
+}
+
+/* ===================== タイピング編 ===================== */
+// 入力されたコードを安全に表示する（使えるタグと属性だけ残す。画像名はアプリ内の絵に差し替え）
+const PREV_OK = ['H1','H2','H3','P','UL','OL','LI','A','STRONG','B','EM','HR','IMG','BR'];
+function safePreview(code){
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + code + '</body>', 'text/html');
+  const clean = node => {
+    Array.from(node.childNodes).forEach(n => {
+      if (n.nodeType === 3) return;
+      if (n.nodeType !== 1 || n.tagName === 'SCRIPT' || n.tagName === 'STYLE'){ n.remove(); return; }
+      clean(n);
+      if (PREV_OK.indexOf(n.tagName) < 0){ n.replaceWith.apply(n, Array.from(n.childNodes)); return; }
+      Array.from(n.attributes).forEach(a => { if (['href','src','alt'].indexOf(a.name) < 0) n.removeAttribute(a.name); });
+      if (n.tagName === 'A'){ if (/^\s*javascript:/i.test(n.getAttribute('href') || '')) n.removeAttribute('href'); n.setAttribute('draggable', 'false'); }
+      if (n.tagName === 'IMG'){
+        const p = PICS.find(x => x.name + '.svg' === (n.getAttribute('src') || ''));
+        if (p) n.setAttribute('src', picURI(p.id)); else n.removeAttribute('src');
+      }
+    });
+  };
+  clean(doc.body);
+  return doc.body.innerHTML;
+}
+const parseTpl = t => t.split(/\[\[(.*?)\]\]/).map((s, i) => i % 2 ? {a:s} : s);
+const itemCode = it => it.line || parseTpl(it.t).map(p => typeof p === 'string' ? p : p.a).join('');
+// 問題文のコード（固定部分）に色を付ける。完全なタグは説明・使用例が出るようにする
+function codeLit(s){
+  return esc(s).replace(/&lt;(\/?)(\w+)(.*?)&gt;|([^\x00-\x7f]+)/g, (m, sl, name, attrs, jp) => {
+    if (jp) return '<span class="ttx">' + jp + '</span>';
+    return '<span class="ct' + (sl ? ' cl' : '') + '" data-tag="' + name.toLowerCase() + '">&lt;' + sl + name + attrs + '&gt;</span>';
+  });
+}
+const TINP = ' spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" lang="en"';
+const FULLW = /[＜＞／＂＝ａ-ｚＡ-Ｚ０-９　]/;
+
+function openTypeStage(i){
+  S.idx = i; S.screen = 'type'; S.item = 0; S.fails = 0;
+  hideTip();
+  const st = cur();
+  $('#backBtn').hidden = false;
+  $('#topTitle').innerHTML = cardLabel(st) + ' <span aria-hidden="true">' + st.icon + '</span> ' + fu(st.title);
+  $('#app').innerHTML =
+  '<div class="stage">' +
+    '<div class="main3">' +
+      infoHTML(st, '<p class="tsay" id="tsay"></p><div class="ilabel">' + fu('{見本|みほん}') + '</div><div id="sampleBox"></div>', '') +
+      '<section class="pane left" aria-label="コード入力">' +
+        '<h2 class="ph"><span class="phico" aria-hidden="true">⌨</span><span>' + fu('コード{入力|にゅうりょく}') + '</span><span class="qnum" id="qnum"></span></h2>' +
+        '<div id="typeArea"></div>' +
+        '<div class="actions"><button class="donebtn" id="doneBtn">' + fu('{答|こた}え{合|あ}わせ') + '</button>' +
+          '<button class="donebtn" id="nextQ" hidden>' + fu('{次|つぎ}の{問題|もんだい}へ') + ' ▶</button>' +
+          '<button class="skipbtn" id="skipBtn">' + fu('スキップして{次|つぎ}へ ▶') + '</button></div>' +
+      '</section>' +
+      '<section class="pane right" aria-label="画面">' +
+        '<h2 class="ph"><span class="phico" aria-hidden="true">🖥</span>' + '<span>' + fu('{画面|がめん}（あなたのコードの{表示|ひょうじ}）') + '</span></h2><div id="viewWrap">' + browserHTML('', 'pv') + '</div>' +
+      '</section>' +
+    '</div>' +
+  '</div>';
+  $('#doneBtn').addEventListener('click', typeJudge);
+  $('#nextQ').addEventListener('click', nextItem);
+  $('#skipBtn').addEventListener('click', goNext);
+  const area = $('#typeArea');
+  area.addEventListener('input', () => { $$('.tinp', area).forEach(x => x.classList.remove('glow', 'ok')); clearMarks(); typePreview(); });
+  area.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    e.preventDefault();
+    if (!$('#nextQ').hidden) nextItem(); else typeJudge();
+  });
+  area.addEventListener('click', e => { const ct = e.target.closest('.ct[data-tag]'); if (ct) showTagInfo(ct.dataset.tag); });
+  renderItem();
+  window.scrollTo(0, 0);
+  showTypeIntro();
+}
+function renderItem(){
+  const st = cur(), it = st.items[S.item];
+  S.fails = 0;
+  $('#qnum').textContent = '問題 ' + (S.item + 1) + ' / ' + st.items.length;
+  let h;
+  if (it.line){
+    h = '<div class="tcode"><input class="tinp tline" data-k="0" placeholder="ここに入力" aria-label="コードを入力"' + TINP + '></div>';
+  } else {
+    let k = 0;
+    h = '<div class="tcode">' + parseTpl(it.t).map(p => typeof p === 'string' ? codeLit(p) :
+      '<input class="tinp" data-k="' + (k++) + '" size="' + Math.max(3, p.a.length + 1) + '" aria-label="空欄"' + TINP + '>').join('') + '</div>';
+  }
+  $('#typeArea').innerHTML = h + '<div class="tresult" id="tresult" hidden></div>';
+  $('#tsay').innerHTML = it.line ? fu(it.say) : '';
+  $('#tsay').hidden = !it.line;
+  $('#sampleBox').innerHTML = browserHTML('<div class="sfit">' + safePreview(itemCode(it)) + '</div>');
+  $('#nextQ').hidden = true; $('#doneBtn').hidden = false;
+  setBubble(fu(st.robot));
+  typePreview();
+  const f = $('#typeArea .tinp'); if (f && $('#modal').hidden) f.focus({preventScroll:true});
+}
+function typedCode(){
+  const it = cur().items[S.item], v = $$('#typeArea .tinp').map(x => x.value);
+  if (it.line) return v[0];
+  let k = 0;
+  return parseTpl(it.t).map(p => typeof p === 'string' ? p : v[k++]).join('');
+}
+function typePreview(){
+  const c = typedCode();
+  $('#pv').innerHTML = c.trim() ? safePreview(c) : '<div class="pvempty">' + fu('（まだ{何|なに}もありません）') + '</div>';
+}
+// 1行入力のまちがいの見つけ方（よくある順に確認）
+function lineDiag(v, ans){
+  // 3回目からは理由に加えて正解の例も見せる
+  return diagReason(v, ans) + (S.fails >= 3 ? '<br>{正解|せいかい}の{例|れい}：<code>' + esc(ans) + '</code>' : '');
+}
+function diagReason(v, ans){
+  if (!v) return '{何|なに}も{入力|にゅうりょく}されていません';
+  if (v[0] !== '<') return '{最初|さいしょ}は &lt; から{始|はじ}めます';
+  const want = ans.match(/^<(\w+)/)[1], got = (v.match(/^<\s*(\w+)/) || [])[1];
+  if (!got || got.toLowerCase() !== want) return 'タグの{名前|なまえ}を{確認|かくにん}してください（&lt;' + want + '&gt; を{使|つか}います）';
+  if (ans.indexOf('</') >= 0 && v.indexOf('</') < 0) return '{終了|しゅうりょう}タグ（&lt;/' + want + '&gt;）がありません';
+  if (ans.indexOf('</') >= 0 && !new RegExp('</' + want + '>$', 'i').test(v)) return '{終了|しゅうりょう}タグの{書|か}き{方|かた}を{確認|かくにん}してください';
+  return '{記号|きごう}（&lt; &gt; / " =）の{位置|いち}や{数|かず}を{確認|かくにん}してください';
+}
+// 答え合わせの結果を、各欄の横の ○ / ✕ と、コードの下の1行で見せる
+function showMarks(ins, okArr){
+  ins.forEach((x, k) => {
+    let m = x.nextElementSibling;
+    if (!m || !m.classList.contains('tmark')){ m = document.createElement('span'); x.after(m); }
+    m.className = 'tmark ' + (okArr[k] ? 'ok' : 'ng');
+    m.textContent = okArr[k] ? '○' : '✕';
+    m.setAttribute('aria-label', okArr[k] ? '正解' : '不正解');
+  });
+  const ng = okArr.filter(v => !v).length, r = $('#tresult');
+  r.hidden = false;
+  r.className = 'tresult ' + (ng ? 'ng' : 'ok');
+  r.innerHTML = ng ? '✕ ' + fu(okArr.length > 1 ? ng + 'か{所|しょ}まちがいがあります（✕の{欄|らん}）' : 'まちがいがあります') : '○ ' + fu('{正解|せいかい}です');
+}
+function clearMarks(){
+  $$('#typeArea .tmark').forEach(m => m.remove());
+  const r = $('#tresult'); if (r) r.hidden = true;
+}
+function typeJudge(){
+  const st = cur(), it = st.items[S.item], ins = $$('#typeArea .tinp');
+  ins.forEach(x => x.classList.remove('glow', 'ok'));
+  const ans = it.line ? null : parseTpl(it.t).filter(p => typeof p !== 'string').map(p => p.a);
+  const okArr = ins.map((x, k) => !FULLW.test(x.value) && (it.line
+    ? it.re.test(x.value.trim().replace(/>\s+</g, '><'))
+    : x.value.trim().toLowerCase() === ans[k].toLowerCase()));
+  showMarks(ins, okArr);
+  const fw = ins.filter(x => FULLW.test(x.value));
+  if (fw.length){
+    fw.forEach(x => x.classList.add('glow')); shakeDone();
+    setBubble(fu('{全角|ぜんかく}の{文字|もじ}が{混|ま}ざっています。{半角英数字|はんかくえいすうじ}（{日本語入力|にほんごにゅうりょく}オフ）で{入力|にゅうりょく}してください'), true);
+    return;
+  }
+  let ok, msg = '';
+  if (it.line){
+    const v = ins[0].value.trim().replace(/>\s+</g, '><');
+    ok = okArr[0];
+    if (!ok){ S.fails++; msg = lineDiag(v, it.line); ins[0].classList.add('glow'); }
+  } else {
+    const bad = ins.filter((x, k) => !okArr[k]);
+    ok = !bad.length;
+    if (!ok){
+      S.fails++;
+      bad.forEach(x => x.classList.add('glow'));
+      if (S.fails === 1) msg = '{惜|お}しい！{光|ひか}っている{欄|らん}を{確認|かくにん}してください';
+      else if (S.fails === 2) msg = 'ヒント：' + bad.map(x => '「<code>' + esc(ans[+x.dataset.k].charAt(0)) + '</code>」').join('、') + ' から{始|はじ}まります';
+      else msg = '{正解|せいかい}は ' + bad.map(x => '<code>' + esc(ans[+x.dataset.k]) + '</code>').join('、') + ' です。{入力|にゅうりょく}してみましょう';
+    }
+  }
+  if (!ok){ shakeDone(); setBubble(fu(msg), true); return; }
+  ins.forEach(x => x.classList.add('ok'));
+  if (S.item < st.items.length - 1){
+    setBubble(fu('{正解|せいかい}です！'));
+    $('#doneBtn').hidden = true; $('#nextQ').hidden = false; $('#nextQ').focus();
+  } else success();
+}
+function nextItem(){ S.item++; renderItem(); }
+function showTypeIntro(){
+  const st = cur(), it = st.items[0];
+  const fig = it.line ? '<pre class="excode">' + hlCode(it.line) + '</pre>' :
+    '<div class="tcode">' + parseTpl(it.t).map(p => typeof p === 'string' ? codeLit(p) : '<span class="tblank">' + esc(p.a) + '</span>').join('') + '</div>';
+  modal('<div class="ihead">' + cardLabel(st) + ' ' + st.icon + '</div><div class="igoal">' + fu(st.goal) + '</div>' +
+    '<div class="newp"><div class="nl">' + fu('{入力例|にゅうりょくれい}（{青|あお}い{枠|わく}が{入力|にゅうりょく}する{部分|ぶぶん}）') + '</div><div class="flow"><div class="fx">' + fig + '</div><span class="farr" aria-hidden="true">▶</span><div class="fx">' + browserHTML(safePreview(itemCode(it))) + '</div></div></div>' +
+    '<div class="newp"><div class="nl">⌨ ' + fu('{入力|にゅうりょく}のポイント') + '</div><ul class="kbtips">' +
+      '<li>' + fu('{半角英数字|はんかくえいすうじ}で{入力|にゅうりょく}します（{日本語入力|にほんごにゅうりょく}はオフ。「{半角|はんかく}/{全角|ぜんかく}」キーで{切|き}り{替|か}え）') + '</li>' +
+      '<li>' + fu('&lt; は Shift＋「ね」キー、&gt; は Shift＋「る」キー、/ は「め」キー') + '</li>' +
+      '<li>' + fu('Enterキーでも{答|こた}え{合|あ}わせできます') + '</li></ul></div>' +
+    '<div class="mbtns"><button class="bigok" data-close>' + fu('{始|はじ}める') + ' ▶</button></div>',
+    {onClose: () => { const f = $('#typeArea .tinp'); if (f) f.focus({preventScroll:true}); }});
+}
+
+/* ===================== 上のバー ===================== */
+function applyFuri(){
+  document.body.classList.toggle('nofuri', !prog.furi);
+  $('#furiBtn').setAttribute('aria-pressed', prog.furi);
+  fitSample();   // ふりがなで高さが変わるので、見本と画面をそろえ直す
+}
+$('#furiBtn').addEventListener('click', () => { prog.furi = !prog.furi; saveProg(); applyFuri(); });
+$('#guideBtn').addEventListener('click', () => showGuide());
+$('#backBtn').addEventListener('click', () => { closeModal(); renderSelect(); });
+
+/* ===================== はじまり ===================== */
+applyFuri();
+renderSelect();
+if (!prog.guide) showGuide(() => { prog.guide = true; saveProg(); });
+
+})();
+</script>
+</body>
+</html>

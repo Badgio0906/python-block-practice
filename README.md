@@ -1,10 +1,18 @@
-# Python ブロック練習 — 売上データ探偵（試験版）
+# HTML・Python ブロック練習
 
-[HTML ブロック練習](https://github.com/Badgio0906/html-block-practice) の「操作 → コードを見る → 結果を確かめる」を、Python ならではの**データ処理**に置き換えた試験版です。架空のカフェの注文 120 件を、天気で絞り込み、個数または売上でランキングにします。設定から Python コードが生成され、ブラウザ内の Python（Pyodide）が実際に実行します。コードを直接書き換えて実験することもできます。
+サイト上部の切り替えで、HTMLのサイト制作練習とPythonのデータ調査を行き来できます。HTML教材は [元のリポジトリ](https://github.com/Badgio0906/html-block-practice) の内容を `html/index.html` に統合しています。
+
+## HTML版
+
+`html/index.html` でHTMLブロックを並べ、画面とコードを見ながら練習できます。詳しい操作は[元のREADME](https://github.com/Badgio0906/html-block-practice#readme)を参照してください。
+
+## Python版 — 売上データ探偵（試験版）
+
+HTML版の「操作 → コードを見る → 結果を確かめる」を、Python ならではの**データ処理**に置き換えた試験版です。架空のカフェの注文 120 件を、天気で絞り込み、個数または売上でランキングにします。設定から Python コードが生成され、ブラウザ内の Python（Pyodide）が実際に実行します。コードを直接書き換えて実験することもできます。
 
 ## 試す
 
-Python 3 がある環境で、このフォルダから次を実行し、表示されたアドレスを Chrome / Edge で開いてください。
+Python 3 がある環境で、このフォルダから次を実行し、表示されたアドレスを Chrome / Edge で開いてください。HTML版へは上部の切り替えから移動できます。
 
 ```sh
 python3 -m http.server 8000
